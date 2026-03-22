@@ -40,3 +40,28 @@ export interface StateManager {
   save(state: WorkflowState): void;
   clear(documentType: string): void;
 }
+
+// Service layer types
+export interface ConversationMessage {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
+export interface DocumentResult {
+  response: string;
+  documentWritten: boolean;
+  documentPath?: string;
+}
+
+export interface ConsistencyIssue {
+  docType: string;
+  docName: string;
+  direction: 'upstream' | 'downstream';
+  issues: string;
+}
+
+export interface ConsistencyCheckResult {
+  documentType: string;
+  inconsistencies: ConsistencyIssue[];
+  chain: string[];
+}
