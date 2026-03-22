@@ -1,0 +1,32 @@
+{
+  "name": "ddx",
+  "version": "0.1.5",
+  "description": "AI-human collaboration tool for maintaining source of truth documentation",
+  "main": "dist/index.js",
+  "bin": {
+    "ddx": "./dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start": "node dist/cli.js"
+  },
+  "keywords": ["documentation", "ai", "collaboration", "source-of-truth"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.18.0",
+    "commander": "^11.1.0",
+    "dotenv": "^16.4.0",
+    "js-yaml": "^4.1.0",
+    "chalk": "^4.1.2"
+  },
+  "devDependencies": {
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "^20.11.0",
+    "typescript": "^5.3.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

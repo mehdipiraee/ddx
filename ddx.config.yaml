@@ -1,0 +1,46 @@
+# DDX Configuration
+# Defines document types, templates, prompts, and dependencies
+
+documents:
+  opportunity_brief:
+    name: "Opportunity Brief"
+    prompt: "ddx/prompts/opportunity_brief_prompt.md"
+    template: "ddx/templates/opportunity_brief_template.md"
+    output: "ddx/sotdocs/opportunity_brief.md"
+    upstream: []
+    downstream: ["one_pager"]
+
+  one_pager:
+    name: "Product One-Pager"
+    prompt: "ddx/prompts/one_pager_prompt.md"
+    template: "ddx/templates/one_pager_template.md"
+    output: "ddx/sotdocs/one_pager.md"
+    upstream: ["opportunity_brief"]
+    downstream: ["prd"]
+
+  prd:
+    name: "Product Requirements Document"
+    prompt: "ddx/prompts/prd_prompt.md"
+    template: "ddx/templates/prd_template.md"
+    output: "ddx/sotdocs/prd.md"
+    upstream: ["one_pager"]
+    downstream: ["sdd"]
+
+  sdd:
+    name: "System Design Document"
+    prompt: "ddx/prompts/sdd_prompt.md"
+    template: "ddx/templates/sdd_template.md"
+    output: "ddx/sotdocs/sdd.md"
+    upstream: ["prd"]
+    downstream: []
+
+# LLM Configuration
+llm:
+  model: "claude-sonnet-4-20250514"
+  max_tokens: 4096
+  temperature: 1.0
+
+# Workflow Configuration
+workflow:
+  state_dir: "ddx/.state"
+  state_file: "ddx/.state/state.json"
