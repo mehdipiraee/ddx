@@ -20,38 +20,39 @@ export class InitCommand {
     console.log('\nInitializing DDX project...\n');
 
     const targetDir = process.cwd();
+    const toolingDir = path.join(targetDir, '.ddx-tooling');
     const ddxDir = path.join(targetDir, 'ddx');
 
     // Check if files already exist
     if (!options.force) {
-      this.checkExistingFiles(ddxDir);
+      this.checkExistingFiles(toolingDir);
     }
 
-    // Create ddx directory
-    this.createDirectory(ddxDir);
+    // Create .ddx-tooling directory
+    this.createDirectory(toolingDir);
 
     // Copy config file
-    this.copyConfigFile(ddxDir, options.force);
+    this.copyConfigFile(toolingDir, options.force);
 
     // Copy prompts directory
     this.copyDirectory(
       path.join(this.ddxRootDir, 'prompts'),
-      path.join(ddxDir, 'prompts'),
+      path.join(toolingDir, 'prompts'),
       options.force
     );
 
     // Copy templates directory
     this.copyDirectory(
       path.join(this.ddxRootDir, 'templates'),
-      path.join(ddxDir, 'templates'),
+      path.join(toolingDir, 'templates'),
       options.force
     );
 
-    // Create sotdocs directory
-    this.createDirectory(path.join(ddxDir, 'sotdocs'));
+    // Create ddx output directory
+    this.createDirectory(ddxDir);
 
     // Create .env.example
-    this.createEnvExample(ddxDir, options.force);
+    this.createEnvExample(toolingDir, options.force);
 
     // Update .gitignore
     this.updateGitignore(targetDir);
@@ -59,41 +60,40 @@ export class InitCommand {
     console.log('✓ DDX project initialized successfully!\n');
     console.log('Next steps:');
     console.log('  1. Set your API key:');
-    console.log('     echo "ANTHROPIC_API_KEY=your_key_here" > ddx/.env\n');
+    console.log('     echo "ANTHROPIC_API_KEY=your_key_here" > .ddx-tooling/.env\n');
     console.log('  2. List available document types:');
     console.log('     ddx list\n');
     console.log('  3. Create your first document:');
     console.log('     ddx create opportunity_brief\n');
   }
 
-  private checkExistingFiles(ddxDir: string): void {
-    // Check if ddx directory exists
-    if (fs.existsSync(ddxDir)) {
+  private checkExistingFiles(toolingDir: string): void {
+    if (fs.existsSync(toolingDir)) {
       const filesToCheck = [
-        'ddx.config.yaml',
+        'config.yaml',
         'prompts',
         'templates',
       ];
 
       const existingFiles = filesToCheck.filter((file) =>
-        fs.existsSync(path.join(ddxDir, file))
+        fs.existsSync(path.join(toolingDir, file))
       );
 
       if (existingFiles.length > 0) {
         throw new Error(
-          `DDX files already exist in ddx/: ${existingFiles.join(', ')}\n` +
+          `DDX files already exist in .ddx-tooling/: ${existingFiles.join(', ')}\n` +
           'Use --force to overwrite existing files.'
         );
       }
     }
   }
 
-  private copyConfigFile(targetDir: string, force?: boolean): void {
+  private copyConfigFile(toolingDir: string, force?: boolean): void {
     const sourcePath = path.join(this.ddxRootDir, 'ddx.config.yaml');
-    const targetPath = path.join(targetDir, 'ddx.config.yaml');
+    const targetPath = path.join(toolingDir, 'config.yaml');
 
     if (!force && fs.existsSync(targetPath)) {
-      console.log('⊘ Skipping ddx.config.yaml (already exists)');
+      console.log('⊘ Skipping config.yaml (already exists)');
       return;
     }
 
@@ -104,7 +104,7 @@ export class InitCommand {
     }
 
     fs.copyFileSync(sourcePath, targetPath);
-    console.log('✓ Created ddx.config.yaml');
+    console.log('✓ Created config.yaml');
   }
 
   private copyDirectory(sourceDir: string, targetDir: string, force?: boolean): void {
@@ -176,8 +176,8 @@ export class InitCommand {
     const gitignorePath = path.join(targetDir, '.gitignore');
 
     const entriesToAdd = [
-      'ddx/.env',
-      'ddx/.state/',
+      '.ddx-tooling/.env',
+      '.ddx-tooling/.state/',
       'node_modules/',
     ];
 

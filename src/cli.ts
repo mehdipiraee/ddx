@@ -15,8 +15,8 @@ import { LLMClient } from './infra/llm-client';
 import { WorkflowEngine } from './workflow';
 import { InitCommand } from './init';
 
-// Load environment variables from ddx/.env
-dotenv.config({ path: path.join(process.cwd(), 'ddx', '.env') });
+// Load environment variables from .ddx-tooling/.env
+dotenv.config({ path: path.join(process.cwd(), '.ddx-tooling', '.env') });
 
 const program = new Command();
 
@@ -109,8 +109,8 @@ function initializeWorkflow() {
   if (!apiKey) {
     throw new Error(
       'ANTHROPIC_API_KEY not found.\n' +
-      'Please create a ddx/.env file with your API key:\n' +
-      '  echo "ANTHROPIC_API_KEY=your_key_here" > ddx/.env'
+      'Please create a .ddx-tooling/.env file with your API key:\n' +
+      '  echo "ANTHROPIC_API_KEY=your_key_here" > .ddx-tooling/.env'
     );
   }
 

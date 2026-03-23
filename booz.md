@@ -39,18 +39,22 @@ This is the single most important architectural change. Everything else follows 
 
 v1's `create` and `continue` are **generic** — they work on any configured document type. v2 replaces this with **named workflow stages** (`mandate → define → design → plan → build → derive`), each with its own dedicated prompt and behavior.
 
-| v1                             | v2 Equivalent            | Notes                                                                                               |
-| ------------------------------ | ------------------------ | --------------------------------------------------------------------------------------------------- |
-| `ddx init`                     | `ddx mandate`            | v2's mandate is richer — it scans the project and asks questions rather than just copying templates |
-| `ddx create opportunity_brief` | `ddx mandate`            | The opportunity brief becomes the mandate                                                           |
-| `ddx create one_pager`         | `ddx define`             | One-pager maps to the define stage                                                                  |
-| `ddx create prd`               | `ddx design`             | PRD maps to the design stage                                                                        |
-| `ddx create sdd`               | `ddx plan`               | SDD maps to the plan stage                                                                          |
-| `ddx continue <type>`          | Implicit in each command | v2 commands auto-detect whether to create or continue based on state                                |
-| `ddx check`                    | `ddx check`              | Same concept, expanded to handle capability scoping                                                 |
-| `ddx list`                     | `ddx list`               | Same concept, expanded to show capabilities + their document status                                 |
-| *(none)*                       | `ddx build`              | New — code generation from plan                                                                     |
-| *(none)*                       | `ddx derive`             | New — derivative artifact generation                                                                |
+| v1                             | v2 Equivalent   | Notes                                                                                                                                                        |
+| ------------------------------ | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `ddx init`                     | `ddx init`      | scaffold DDX project                                                                                                                                         |
+|                                | `ddx mandate`   | creates project-level rules                                                                                                                                  |
+| `ddx create <document type>`   | `ddx create`    | creates a document, the document type needs to be passed to it                                                                                               |
+|                                | `ddx define`    | uses `ddx create` to create product or capability requirements                                                                                               |
+|                                | `ddx design`    | uses `ddx create` to visual wireframes/guides document                                                                                                       |
+|                                | `ddx architect` | uses `ddx create` to create system design document                                                                                                           |
+|                                | `ddx plan`      | uses `ddx create` to work-breakdown/plan                                                                                                                     |
+| `ddx continue <document type>` |                 | v2 commands auto-detect whether to create or continue based on state                                                                                         |
+| `ddx check <document type>`    | `ddx check`     | checks the document in question against upstream and down stream documents for the product or capability and highlights if there are things that don't match |
+| `ddx list`                     | `ddx list`      | Same concept, expanded to show capabilities + their document status                                                                                          |
+| *(none)*                       | `ddx build`     | code generation from plan                                                                                                                                    |
+| *(none)*                       | `ddx derive`    | create project mandate, and product requirements, and other documents from the contents of the project folder                                                |
+|                                |                 |                                                                                                                                                              |
+|                                |                 |                                                                                                                                                              |
 
 ### Key Insight
 
@@ -99,21 +103,21 @@ Thin Clients (all talk to Core Engine over HTTP):
 
 ### What Can Be Reused
 
-| v1 Component | v2 Fate | Rationale |
-|-------------|---------|-----------|
-| `DocumentService` | **Refactor into Core Engine** | Logic is solid. Needs scope detection (product vs capability) and auto-numbering added. |
-| `ConversationService` | **Refactor into Core Engine** | Create/continue logic stays. Remove CLI coupling, add streaming support. |
-| `ConsistencyService` | **Refactor into Core Engine** | Same concept. Add prerequisite chain enforcement. |
-| `ConfigLoader` | **Replace** | v2 uses `.ddx-tooling/config.yaml` with different schema (capabilities, not arbitrary doc types). |
-| `FileManager` | **Keep as-is** | Simple I/O, no changes needed. |
-| `StateManager` | **Enhance** | Same JSON approach, but needs per-capability state and richer workflow tracking. |
-| `LLMClient` | **Enhance** | Add streaming support (SSE), keep Anthropic SDK. |
-| `WorkflowEngine` | **Split** | Orchestration moves to Core Engine. CLI formatting stays in CLI client. |
-| `cli.ts` | **Rewrite** | Becomes thin HTTP client. Switch from Commander to yargs. |
-| `init.ts` | **Rewrite** | Replaced by `mandate` command logic in Core Engine. |
-| `types.ts` | **Evolve** | Core types stay, add capability scoping types. |
-| `prompts/` | **Replace** | v2 has its own prompt set (mandate, define, design, plan, build, derive). |
-| `templates/` | **Replace** | v2 uses `.ddx-tooling/templates/` with different structure. |
+| v1 Component                   | v2 Fate            | Rationale                                                                                             |
+| ------------------------------ | ------------------ | ----------------------------------------------------------------------------------------------------- |
+| `services/DocumentService`     | **Keep + enhance** | Core of `ddx create`. Add scope detection (product vs capability) and auto-numbering.                 |
+| `services/ConversationService` | **Keep + enhance** | Create/continue logic stays. Auto-detect create vs continue from state, add streaming.                |
+| `services/ConsistencyService`  | **Keep + enhance** | Powers `ddx check`. Add prerequisite chain enforcement.                                               |
+| `infra/ConfigLoader`           | **Keep + evolve**  | Expand schema to support capabilities and fixed workflow stages alongside document types.             |
+| `infra/FileManager`            | **Keep as-is**     | Simple I/O, no changes needed.                                                                        |
+| `infra/StateManager`           | **Enhance**        | Same JSON approach, but needs per-capability state and richer workflow tracking.                      |
+| `infra/LLMClient`              | **Enhance**        | Add streaming support (SSE), keep Anthropic SDK.                                                      |
+| `workflow.ts`                  | **Keep + extend**  | Add named command wrappers (`define`, `design`, `architect`, `plan`) that delegate to `create`.       |
+| `cli.ts`                       | **Extend**         | Add new commands (`mandate`, `define`, `design`, `architect`, `plan`, `build`, `derive`) as wrappers. |
+| `init.ts`                      | **Keep**           | Still handles project scaffolding. `mandate` is a separate command, not a replacement.                |
+| `types.ts`                     | **Evolve**         | Core types stay, add capability scoping types.                                                        |
+| `prompts/`                     | **Replace**        | v2 has its own prompt set (mandate, define, design, plan, build, derive).                             |
+| `templates/`                   | **Replace**        | v2 uses `.ddx-tooling/templates/` with different structure.                                           |
 
 ---
 

@@ -4,33 +4,33 @@
 documents:
   opportunity_brief:
     name: "Opportunity Brief"
-    prompt: "ddx/prompts/opportunity_brief_prompt.md"
-    template: "ddx/templates/opportunity_brief_template.md"
-    output: "ddx/sotdocs/opportunity_brief.md"
+    prompt: ".ddx-tooling/prompts/opportunity_brief_prompt.md"
+    template: ".ddx-tooling/templates/opportunity_brief_template.md"
+    output: "ddx/opportunity_brief.md"
     upstream: []
     downstream: ["one_pager"]
 
   one_pager:
     name: "Product One-Pager"
-    prompt: "ddx/prompts/one_pager_prompt.md"
-    template: "ddx/templates/one_pager_template.md"
-    output: "ddx/sotdocs/one_pager.md"
+    prompt: ".ddx-tooling/prompts/one_pager_prompt.md"
+    template: ".ddx-tooling/templates/one_pager_template.md"
+    output: "ddx/one_pager.md"
     upstream: ["opportunity_brief"]
     downstream: ["prd"]
 
   prd:
     name: "Product Requirements Document"
-    prompt: "ddx/prompts/prd_prompt.md"
-    template: "ddx/templates/prd_template.md"
-    output: "ddx/sotdocs/prd.md"
+    prompt: ".ddx-tooling/prompts/prd_prompt.md"
+    template: ".ddx-tooling/templates/prd_template.md"
+    output: "ddx/prd.md"
     upstream: ["one_pager"]
     downstream: ["sdd"]
 
   sdd:
     name: "System Design Document"
-    prompt: "ddx/prompts/sdd_prompt.md"
-    template: "ddx/templates/sdd_template.md"
-    output: "ddx/sotdocs/sdd.md"
+    prompt: ".ddx-tooling/prompts/sdd_prompt.md"
+    template: ".ddx-tooling/templates/sdd_template.md"
+    output: "ddx/sdd.md"
     upstream: ["prd"]
     downstream: []
 
@@ -42,5 +42,5 @@ llm:
 
 # Workflow Configuration
 workflow:
-  state_dir: "ddx/.state"
-  state_file: "ddx/.state/state.json"
+  state_dir: ".ddx-tooling/.state"
+  state_file: ".ddx-tooling/.state/state.json"

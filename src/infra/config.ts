@@ -11,7 +11,7 @@ export class ConfigLoader {
   private config: DDXConfig | null = null;
   private configPath: string;
 
-  constructor(configPath: string = 'ddx/ddx.config.yaml') {
+  constructor(configPath: string = '.ddx-tooling/config.yaml') {
     this.configPath = configPath;
   }
 
