@@ -4,7 +4,7 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import { WorkflowState } from './types';
+import { WorkflowState } from '../types';
 import { FileManager } from './file-manager';
 
 export class StateManager {

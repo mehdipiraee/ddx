@@ -3,10 +3,10 @@
  */
 
 import * as chalk from 'chalk';
-import { ConfigLoader } from './config';
-import { FileManager } from './file-manager';
-import { StateManager } from './state-manager';
-import { LLMClient } from './llm-client';
+import { ConfigLoader } from './infra/config';
+import { FileManager } from './infra/file-manager';
+import { StateManager } from './infra/state-manager';
+import { LLMClient } from './infra/llm-client';
 import { DocumentService } from './services/document-service';
 import { ConversationService } from './services/conversation-service';
 import { ConsistencyService } from './services/consistency-service';

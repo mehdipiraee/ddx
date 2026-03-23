@@ -4,7 +4,7 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import { FileManager } from './file-manager';
+import { FileManager } from './infra/file-manager';
 
 export class InitCommand {
   private fileManager: FileManager;

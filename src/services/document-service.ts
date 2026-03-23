@@ -2,8 +2,8 @@
  * Document Service - Handles document operations
  */
 
-import { ConfigLoader } from '../config';
-import { FileManager } from '../file-manager';
+import { ConfigLoader } from '../infra/config';
+import { FileManager } from '../infra/file-manager';
 import { DocumentConfig } from '../types';
 
 export class DocumentService {

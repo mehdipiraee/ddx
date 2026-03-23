@@ -8,10 +8,10 @@ import { Command } from 'commander';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
 import * as chalk from 'chalk';
-import { ConfigLoader } from './config';
-import { FileManager } from './file-manager';
-import { StateManager } from './state-manager';
-import { LLMClient } from './llm-client';
+import { ConfigLoader } from './infra/config';
+import { FileManager } from './infra/file-manager';
+import { StateManager } from './infra/state-manager';
+import { LLMClient } from './infra/llm-client';
 import { WorkflowEngine } from './workflow';
 import { InitCommand } from './init';
 

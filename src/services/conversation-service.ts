@@ -2,8 +2,8 @@
  * Conversation Service - Manages conversation state and LLM interactions
  */
 
-import { LLMClient } from '../llm-client';
-import { StateManager } from '../state-manager';
+import { LLMClient } from '../infra/llm-client';
+import { StateManager } from '../infra/state-manager';
 import { WorkflowState, DocumentResult } from '../types';
 import { DocumentService } from './document-service';
 

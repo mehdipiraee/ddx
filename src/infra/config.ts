@@ -5,7 +5,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as yaml from 'js-yaml';
-import { DDXConfig } from './types';
+import { DDXConfig } from '../types';
 
 export class ConfigLoader {
   private config: DDXConfig | null = null;

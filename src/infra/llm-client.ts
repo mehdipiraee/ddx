@@ -3,7 +3,7 @@
  */
 
 import Anthropic from '@anthropic-ai/sdk';
-import { LLMConfig } from './types';
+import { LLMConfig } from '../types';
 
 export class LLMClient {
   private client: Anthropic;
