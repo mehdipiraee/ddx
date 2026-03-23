@@ -65,16 +65,18 @@ v1 treats document types as **configuration** (defined in YAML, you can add arbi
 ```
 CLI (Commander.js)
   └── WorkflowEngine (orchestration + formatting)
-        ├── ConversationService (create/continue workflows)
-        ├── DocumentService (read/write/extract docs)
-        ├── ConsistencyService (LLM-based drift detection)
-        ├── ConfigLoader (YAML)
-        ├── FileManager (I/O)
-        ├── StateManager (JSON persistence)
-        └── LLMClient (Anthropic SDK)
+        ├── services/
+        │     ├── ConversationService (create/continue workflows)
+        │     ├── DocumentService (read/write/extract docs)
+        │     └── ConsistencyService (LLM-based drift detection)
+        └── infra/
+              ├── ConfigLoader (YAML)
+              ├── FileManager (I/O)
+              ├── StateManager (JSON persistence)
+              └── LLMClient (Anthropic SDK)
 ```
 
-Everything runs in one process. The service layer is clean but tightly coupled to the CLI lifecycle.
+Everything runs in one process. Infrastructure is separated from business logic, but both are tightly coupled to the CLI lifecycle.
 
 ### v2 Architecture (Planned)
 
