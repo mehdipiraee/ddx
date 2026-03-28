@@ -2,36 +2,36 @@
 # Defines document types, templates, prompts, and dependencies
 
 documents:
-  opportunity_brief:
-    name: "Opportunity Brief"
-    prompt: ".ddx-tooling/prompts/opportunity_brief_prompt.md"
-    template: ".ddx-tooling/templates/opportunity_brief_template.md"
-    output: "ddx/opportunity_brief.md"
+  definition:
+    name: "Definition"
+    prompt: ".ddx-tooling/prompts/definition_prompt.md"
+    template: ".ddx-tooling/templates/definition_template.md"
+    output: "ddx/{scope}/definition.md"
     upstream: []
-    downstream: ["one_pager"]
+    downstream: ["design"]
 
-  one_pager:
-    name: "Product One-Pager"
-    prompt: ".ddx-tooling/prompts/one_pager_prompt.md"
-    template: ".ddx-tooling/templates/one_pager_template.md"
-    output: "ddx/one_pager.md"
-    upstream: ["opportunity_brief"]
-    downstream: ["prd"]
+  design:
+    name: "Design"
+    prompt: ".ddx-tooling/prompts/design_prompt.md"
+    template: ".ddx-tooling/templates/design_template.md"
+    output: "ddx/{scope}/design.md"
+    upstream: ["definition"]
+    downstream: ["spec"]
 
-  prd:
-    name: "Product Requirements Document"
-    prompt: ".ddx-tooling/prompts/prd_prompt.md"
-    template: ".ddx-tooling/templates/prd_template.md"
-    output: "ddx/prd.md"
-    upstream: ["one_pager"]
-    downstream: ["sdd"]
+  spec:
+    name: "Spec"
+    prompt: ".ddx-tooling/prompts/spec_prompt.md"
+    template: ".ddx-tooling/templates/spec_template.md"
+    output: "ddx/{scope}/spec.md"
+    upstream: ["definition", "design"]
+    downstream: ["plan"]
 
-  sdd:
-    name: "System Design Document"
-    prompt: ".ddx-tooling/prompts/sdd_prompt.md"
-    template: ".ddx-tooling/templates/sdd_template.md"
-    output: "ddx/sdd.md"
-    upstream: ["prd"]
+  plan:
+    name: "Plan"
+    prompt: ".ddx-tooling/prompts/plan_prompt.md"
+    template: ".ddx-tooling/templates/plan_template.md"
+    output: "ddx/{scope}/plan.md"
+    upstream: ["definition", "design", "spec"]
     downstream: []
 
 # LLM Configuration

@@ -4,181 +4,311 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
+import * as chalk from 'chalk';
 import { FileManager } from './infra/file-manager';
+
+const c = chalk.default;
+const dim = c.dim;
+const green = c.green;
+const red = c.red;
+const yellow = c.yellow;
+const bold = c.bold;
+const cyan = c.cyan;
+
+const BANNER = `
+${dim('┌─────────────────────────────────────────────┐')}
+${dim('│')}                                             ${dim('│')}
+${dim('│')}    ${bold('██████╗  ██████╗  ██╗  ██╗')}               ${dim('│')}
+${dim('│')}    ${bold('██╔══██╗ ██╔══██╗ ╚██╗██╔╝')}               ${dim('│')}
+${dim('│')}    ${bold('██║  ██║ ██║  ██║  ╚███╔╝')}                ${dim('│')}
+${dim('│')}    ${bold('██║  ██║ ██║  ██║  ██╔██╗')}                ${dim('│')}
+${dim('│')}    ${bold('██████╔╝ ██████╔╝ ██╔╝ ██╗')}               ${dim('│')}
+${dim('│')}    ${bold('╚═════╝  ╚═════╝  ╚═╝  ╚═╝')}               ${dim('│')}
+${dim('│')}                                             ${dim('│')}
+${dim('│')}    ${dim('Document-Driven Development')}              ${dim('│')}
+${dim('│')}                                             ${dim('│')}
+${dim('└─────────────────────────────────────────────┘')}
+`;
+
+interface StepResult {
+  label: string;
+  status: 'ok' | 'skip' | 'fail';
+  detail?: string;
+}
 
 export class InitCommand {
   private fileManager: FileManager;
   private ddxRootDir: string;
+  private steps: StepResult[] = [];
 
   constructor() {
     this.fileManager = new FileManager();
-    // Get the DDX installation directory (where this module lives)
     this.ddxRootDir = path.join(__dirname, '..');
   }
 
   async execute(options: { force?: boolean } = {}): Promise<void> {
-    console.log('\nInitializing DDX project...\n');
+    console.log(BANNER);
+
+    if (options.force) {
+      console.log(dim('  --force enabled, overwriting existing files\n'));
+    }
 
     const targetDir = process.cwd();
     const toolingDir = path.join(targetDir, '.ddx-tooling');
     const ddxDir = path.join(targetDir, 'ddx');
 
-    // Check if files already exist
+    // Pre-flight check
     if (!options.force) {
-      this.checkExistingFiles(toolingDir);
-    }
-
-    // Create .ddx-tooling directory
-    this.createDirectory(toolingDir);
-
-    // Copy config file
-    this.copyConfigFile(toolingDir, options.force);
-
-    // Copy prompts directory
-    this.copyDirectory(
-      path.join(this.ddxRootDir, 'prompts'),
-      path.join(toolingDir, 'prompts'),
-      options.force
-    );
-
-    // Copy templates directory
-    this.copyDirectory(
-      path.join(this.ddxRootDir, 'templates'),
-      path.join(toolingDir, 'templates'),
-      options.force
-    );
-
-    // Create ddx output directory
-    this.createDirectory(ddxDir);
-
-    // Create .env.example
-    this.createEnvExample(toolingDir, options.force);
-
-    // Update .gitignore
-    this.updateGitignore(targetDir);
-
-    console.log('✓ DDX project initialized successfully!\n');
-    console.log('Next steps:');
-    console.log('  1. Set your API key:');
-    console.log('     echo "ANTHROPIC_API_KEY=your_key_here" > .ddx-tooling/.env\n');
-    console.log('  2. List available document types:');
-    console.log('     ddx list\n');
-    console.log('  3. Create your first document:');
-    console.log('     ddx create opportunity_brief\n');
-  }
-
-  private checkExistingFiles(toolingDir: string): void {
-    if (fs.existsSync(toolingDir)) {
-      const filesToCheck = [
-        'config.yaml',
-        'prompts',
-        'templates',
-      ];
-
-      const existingFiles = filesToCheck.filter((file) =>
-        fs.existsSync(path.join(toolingDir, file))
-      );
-
-      if (existingFiles.length > 0) {
-        throw new Error(
-          `DDX files already exist in .ddx-tooling/: ${existingFiles.join(', ')}\n` +
-          'Use --force to overwrite existing files.'
-        );
+      try {
+        this.checkExistingFiles(targetDir, toolingDir);
+        this.logStep('Pre-flight check', 'ok');
+      } catch (error) {
+        this.logStep('Pre-flight check', 'fail', (error as Error).message);
+        this.printSummary();
+        throw error;
       }
+    } else {
+      this.logStep('Pre-flight check', 'skip', 'force mode');
+    }
+
+    // Scaffold tooling
+    try {
+      const result = this.createDirectory(toolingDir);
+      this.logStep('Create .ddx-tooling/', result === 'created' ? 'ok' : 'skip', result === 'exists' ? 'already exists' : undefined);
+    } catch (error) {
+      this.logStep('Create .ddx-tooling/', 'fail', (error as Error).message);
+    }
+
+    // Config
+    try {
+      const result = this.copyConfigFile(toolingDir, options.force);
+      this.logStep('Copy config.yaml', result === 'skipped' ? 'skip' : 'ok', result);
+    } catch (error) {
+      this.logStep('Copy config.yaml', 'fail', (error as Error).message);
+    }
+
+    // Prompts
+    try {
+      const result = this.copyDirectory(
+        path.join(this.ddxRootDir, 'prompts'),
+        path.join(toolingDir, 'prompts'),
+        options.force
+      );
+      this.logStep(
+        'Copy prompts/',
+        result.status === 'skipped' ? 'skip' : 'ok',
+        result.status === 'skipped' ? 'already exists' : `${result.status}: ${result.files.join(', ')}`
+      );
+    } catch (error) {
+      this.logStep('Copy prompts/', 'fail', (error as Error).message);
+    }
+
+    // Templates
+    try {
+      const result = this.copyDirectory(
+        path.join(this.ddxRootDir, 'templates'),
+        path.join(toolingDir, 'templates'),
+        options.force
+      );
+      this.logStep(
+        'Copy templates/',
+        result.status === 'skipped' ? 'skip' : 'ok',
+        result.status === 'skipped' ? 'already exists' : `${result.status}: ${result.files.join(', ')}`
+      );
+    } catch (error) {
+      this.logStep('Copy templates/', 'fail', (error as Error).message);
+    }
+
+    // Skills
+    try {
+      const result = this.copyDirectory(
+        path.join(this.ddxRootDir, 'commands'),
+        path.join(targetDir, '.claude', 'commands'),
+        options.force
+      );
+      this.logStep(
+        'Copy skills to .claude/commands/',
+        result.status === 'skipped' ? 'skip' : 'ok',
+        result.status === 'skipped' ? 'already exists' : `${result.status}: ${result.files.join(', ')}`
+      );
+    } catch (error) {
+      this.logStep('Copy skills to .claude/commands/', 'fail', (error as Error).message);
+    }
+
+    // Output directory
+    try {
+      const result = this.createDirectory(ddxDir);
+      this.logStep('Create ddx/', result === 'created' ? 'ok' : 'skip', result === 'exists' ? 'already exists' : undefined);
+    } catch (error) {
+      this.logStep('Create ddx/', 'fail', (error as Error).message);
+    }
+
+    // .env.example
+    try {
+      const result = this.createEnvExample(toolingDir, options.force);
+      this.logStep('Create .env.example', result === 'skipped' ? 'skip' : 'ok', result);
+    } catch (error) {
+      this.logStep('Create .env.example', 'fail', (error as Error).message);
+    }
+
+    // .gitignore
+    try {
+      const result = this.updateGitignore(targetDir);
+      this.logStep('Update .gitignore', result ? 'ok' : 'skip', result ? undefined : 'already up to date');
+    } catch (error) {
+      this.logStep('Update .gitignore', 'fail', (error as Error).message);
+    }
+
+    // Claude Code permissions
+    try {
+      const result = this.updateClaudePermissions(targetDir);
+      this.logStep('Configure Claude Code permissions', result ? 'ok' : 'skip', result ? undefined : 'already configured');
+    } catch (error) {
+      this.logStep('Configure Claude Code permissions', 'fail', (error as Error).message);
+    }
+
+    // Project scan
+    const hasCode = this.hasExistingFiles(targetDir);
+    this.logStep('Scan for existing files', 'ok', hasCode ? 'files detected' : 'empty project');
+
+    // Summary
+    this.printSummary();
+
+    // Next step
+    console.log(dim('  ─────────────────────────────────────────\n'));
+    console.log(`  DDX is ready. Open ${bold('Claude Code')} in this project\n`);
+    if (hasCode) {
+      console.log(`  Existing files were found. Run this in Claude Code`);
+      console.log(`  to document your current project:\n`);
+      console.log(cyan('    /ddx.derive'));
+      console.log(dim('    Analyzes your codebase and generates product docs\n'));
+    } else {
+      console.log(`  This is an empty project. Run this in Claude Code\n`);
+      console.log(cyan('    /ddx.define'));
+      console.log(dim('    Start defining your product from scratch\n'));
     }
   }
 
-  private copyConfigFile(toolingDir: string, force?: boolean): void {
+  private logStep(label: string, status: 'ok' | 'skip' | 'fail', detail?: string): void {
+    this.steps.push({ label, status, detail });
+
+    const icon = status === 'ok' ? green('  ✓')
+               : status === 'skip' ? yellow('  ○')
+               : red('  ✗');
+
+    const detailStr = detail ? dim(` (${detail})`) : '';
+    console.log(`${icon} ${label}${detailStr}`);
+  }
+
+  private printSummary(): void {
+    const ok = this.steps.filter((s) => s.status === 'ok').length;
+    const skip = this.steps.filter((s) => s.status === 'skip').length;
+    const fail = this.steps.filter((s) => s.status === 'fail').length;
+
+    console.log();
+    if (fail === 0) {
+      console.log(green(`  Done. ${ok} completed, ${skip} skipped, ${fail} failed.`));
+    } else {
+      console.log(red(`  Done. ${ok} completed, ${skip} skipped, ${fail} failed.`));
+    }
+  }
+
+  private checkExistingFiles(targetDir: string, toolingDir: string): void {
+    const pathsToCheck = [
+      path.join(toolingDir, 'config.yaml'),
+      path.join(toolingDir, 'prompts'),
+      path.join(toolingDir, 'templates'),
+      path.join(targetDir, '.claude', 'commands'),
+    ];
+
+    const existing = pathsToCheck.filter((p) => fs.existsSync(p));
+
+    if (existing.length > 0) {
+      const names = existing.map((p) => path.relative(targetDir, p));
+      throw new Error(
+        `DDX files already exist: ${names.join(', ')}\n` +
+        'Use --force to overwrite existing files.'
+      );
+    }
+  }
+
+  private copyConfigFile(toolingDir: string, force?: boolean): 'created' | 'overwritten' | 'skipped' {
     const sourcePath = path.join(this.ddxRootDir, 'ddx.config.yaml');
     const targetPath = path.join(toolingDir, 'config.yaml');
+    const existed = fs.existsSync(targetPath);
 
-    if (!force && fs.existsSync(targetPath)) {
-      console.log('⊘ Skipping config.yaml (already exists)');
-      return;
+    if (!force && existed) {
+      return 'skipped';
     }
 
     if (!fs.existsSync(sourcePath)) {
-      throw new Error(
-        'DDX config template not found. Please ensure DDX is properly installed.'
-      );
+      throw new Error('DDX config template not found. Is DDX properly installed?');
     }
 
     fs.copyFileSync(sourcePath, targetPath);
-    console.log('✓ Created config.yaml');
+    return existed ? 'overwritten' : 'created';
   }
 
-  private copyDirectory(sourceDir: string, targetDir: string, force?: boolean): void {
-    const dirName = path.basename(targetDir);
-
+  private copyDirectory(sourceDir: string, targetDir: string, force?: boolean): { status: 'created' | 'overwritten' | 'skipped'; files: string[] } {
     if (!fs.existsSync(sourceDir)) {
-      console.log(`⊘ Skipping ${dirName}/ (source not found)`);
-      return;
+      throw new Error(`Source not found: ${sourceDir}`);
     }
 
-    if (!force && fs.existsSync(targetDir)) {
-      console.log(`⊘ Skipping ${dirName}/ (already exists)`);
-      return;
+    const existed = fs.existsSync(targetDir);
+
+    if (!force && existed) {
+      return { status: 'skipped', files: [] };
     }
 
-    // Create target directory
     this.fileManager.ensureDirectory(targetDir);
-
-    // Copy all files from source to target
     const files = fs.readdirSync(sourceDir);
+    const copied: string[] = [];
 
     for (const file of files) {
-      // Skip hidden files and directories
-      if (file.startsWith('.')) {
-        continue;
-      }
+      if (file.startsWith('.')) continue;
 
       const sourcePath = path.join(sourceDir, file);
       const targetPath = path.join(targetDir, file);
-
       const stat = fs.statSync(sourcePath);
 
       if (stat.isDirectory()) {
         this.copyDirectory(sourcePath, targetPath, force);
       } else {
         fs.copyFileSync(sourcePath, targetPath);
+        copied.push(file);
       }
     }
 
-    console.log(`✓ Created ${dirName}/ directory`);
+    return { status: existed ? 'overwritten' : 'created', files: copied };
   }
 
-  private createDirectory(dirPath: string): void {
-    const dirName = path.basename(dirPath);
-
+  private createDirectory(dirPath: string): 'created' | 'exists' {
     if (fs.existsSync(dirPath)) {
-      console.log(`⊘ Skipping ${dirName}/ (already exists)`);
-      return;
+      return 'exists';
     }
-
     this.fileManager.ensureDirectory(dirPath);
-    console.log(`✓ Created ${dirName}/ directory`);
+    return 'created';
   }
 
-  private createEnvExample(targetDir: string, force?: boolean): void {
+  private createEnvExample(targetDir: string, force?: boolean): 'created' | 'overwritten' | 'skipped' {
     const targetPath = path.join(targetDir, '.env.example');
+    const existed = fs.existsSync(targetPath);
 
-    if (!force && fs.existsSync(targetPath)) {
-      console.log('⊘ Skipping .env.example (already exists)');
-      return;
+    if (!force && existed) {
+      return 'skipped';
     }
 
     const content = '# Anthropic API Key\nANTHROPIC_API_KEY=your_api_key_here\n';
     this.fileManager.writeFile(targetPath, content);
-    console.log('✓ Created .env.example');
+    return existed ? 'overwritten' : 'created';
   }
 
-  private updateGitignore(targetDir: string): void {
+  private updateGitignore(targetDir: string): boolean {
     const gitignorePath = path.join(targetDir, '.gitignore');
 
     const entriesToAdd = [
       '.ddx-tooling/.env',
       '.ddx-tooling/.state/',
-      'node_modules/',
     ];
 
     let existingContent = '';
@@ -186,17 +316,14 @@ export class InitCommand {
       existingContent = this.fileManager.readFile(gitignorePath);
     }
 
-    const existingLines = new Set(
-      existingContent.split('\n').map((line) => line.trim())
-    );
+    const existingLines = existingContent.split('\n').map((line) => line.trim());
 
     const linesToAdd = entriesToAdd.filter(
-      (entry) => !existingLines.has(entry)
+      (entry) => !this.isGitignored(entry, existingLines)
     );
 
     if (linesToAdd.length === 0) {
-      console.log('⊘ .gitignore already up to date');
-      return;
+      return false;
     }
 
     let newContent = existingContent;
@@ -212,6 +339,73 @@ export class InitCommand {
     newContent += linesToAdd.join('\n') + '\n';
 
     this.fileManager.writeFile(gitignorePath, newContent);
-    console.log('✓ Updated .gitignore');
+    return true;
+  }
+
+  private hasExistingFiles(targetDir: string): boolean {
+    const ignore = new Set([
+      '.git', '.gitignore', '.ddx-tooling', '.claude',
+      'ddx', 'node_modules', '.DS_Store',
+    ]);
+
+    try {
+      const entries = fs.readdirSync(targetDir);
+      return entries.some((name) => !ignore.has(name) && !name.startsWith('.'));
+    } catch {
+      return false;
+    }
+  }
+
+  private updateClaudePermissions(targetDir: string): boolean {
+    const settingsPath = path.join(targetDir, '.claude', 'settings.local.json');
+    const ddxPermissions = [
+      'Read(/ddx/**)',
+      'Edit(/ddx/**)',
+      'Write(/ddx/**)',
+      'Read(/.ddx-tooling/**)',
+      'Bash(mkdir -p ddx/:*)',
+    ];
+
+    let settings: any = { permissions: { allow: [], deny: [], ask: [] } };
+
+    if (fs.existsSync(settingsPath)) {
+      try {
+        settings = JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
+        if (!settings.permissions) {
+          settings.permissions = { allow: [], deny: [], ask: [] };
+        }
+        if (!Array.isArray(settings.permissions.allow)) {
+          settings.permissions.allow = [];
+        }
+      } catch {
+        // Malformed JSON, start fresh
+        settings = { permissions: { allow: [], deny: [], ask: [] } };
+      }
+    }
+
+    const existing = new Set(settings.permissions.allow);
+    const toAdd = ddxPermissions.filter((p) => !existing.has(p));
+
+    if (toAdd.length === 0) {
+      return false;
+    }
+
+    settings.permissions.allow.push(...toAdd);
+
+    this.fileManager.ensureDirectory(path.dirname(settingsPath));
+    fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2) + '\n', 'utf8');
+    return true;
+  }
+
+  private isGitignored(entry: string, existingLines: string[]): boolean {
+    const filename = path.basename(entry);
+
+    for (const line of existingLines) {
+      if (!line || line.startsWith('#')) continue;
+      if (line === entry) return true;
+      if (!line.includes('/') && line === filename) return true;
+    }
+
+    return false;
   }
 }

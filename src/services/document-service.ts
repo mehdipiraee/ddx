@@ -47,7 +47,7 @@ export class DocumentService {
       if (!this.fileManager.fileExists(upstreamConfig.output)) {
         throw new Error(
           `Upstream document required but not found: ${upstreamConfig.output}\n` +
-          `Please create '${upstreamType}' first using: ddx create ${upstreamType}`
+          `Please create '${upstreamType}' first via the REPL ('ddx') or the corresponding skill.`
         );
       }
 

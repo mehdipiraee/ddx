@@ -7,7 +7,9 @@
     "ddx": "./dist/cli.js"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && chmod +x dist/cli.js",
+    "build:backend": "tsc && chmod +x dist/cli.js",
+    "prepare": "npm run build",
     "dev": "tsc --watch",
     "start": "node dist/cli.js"
   },

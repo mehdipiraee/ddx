@@ -1,23 +1,17 @@
 #!/usr/bin/env node
 
 /**
- * DDX CLI - Main entry point
+ * DDX CLI - Simplified entry point
+ *
+ * Commands: init, list
+ * Default (no args): launches interactive REPL
  */
 
 import { Command } from 'commander';
-import * as dotenv from 'dotenv';
-import * as path from 'path';
 import * as chalk from 'chalk';
 import { ConfigLoader } from './infra/config';
-import { FileManager } from './infra/file-manager';
-import { StateManager } from './infra/state-manager';
-import { LLMClient } from './infra/llm-client';
-import { WorkflowEngine } from './workflow';
 import { InitCommand } from './init';
-
-// Load environment variables from .ddx-tooling/.env
-dotenv.config({ path: path.join(process.cwd(), '.ddx-tooling', '.env') });
-
+import { DDXRepl } from './repl';
 const program = new Command();
 
 program
@@ -33,43 +27,6 @@ program
     try {
       const initCommand = new InitCommand();
       await initCommand.execute(options);
-    } catch (error) {
-      handleError(error);
-    }
-  });
-
-program
-  .command('create <document-type>')
-  .description('Start creating a new document')
-  .action(async (documentType: string) => {
-    try {
-      const { workflow } = initializeWorkflow();
-      await workflow.createDocument(documentType);
-    } catch (error) {
-      handleError(error);
-    }
-  });
-
-program
-  .command('continue <document-type>')
-  .description('Continue working on a document after editing')
-  .option('-m, --message <message>', 'Optional message to send to the AI')
-  .action(async (documentType: string, options: { message?: string }) => {
-    try {
-      const { workflow } = initializeWorkflow();
-      await workflow.continueDocument(documentType, options.message);
-    } catch (error) {
-      handleError(error);
-    }
-  });
-
-program
-  .command('check <document-type>')
-  .description('Check document consistency with upstream and downstream documents')
-  .action(async (documentType: string) => {
-    try {
-      const { workflow } = initializeWorkflow();
-      await workflow.checkDocument(documentType);
     } catch (error) {
       handleError(error);
     }
@@ -103,34 +60,23 @@ program
     }
   });
 
-function initializeWorkflow() {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-
-  if (!apiKey) {
-    throw new Error(
-      'ANTHROPIC_API_KEY not found.\n' +
-      'Please create a .ddx-tooling/.env file with your API key:\n' +
-      '  echo "ANTHROPIC_API_KEY=your_key_here" > .ddx-tooling/.env'
-    );
-  }
-
-  const configLoader = new ConfigLoader();
-  const config = configLoader.load();
-  const fileManager = new FileManager();
-  const stateManager = new StateManager(config.workflow.state_dir);
-  const llmClient = new LLMClient(apiKey, config.llm);
-  const workflow = new WorkflowEngine(configLoader, fileManager, stateManager, llmClient);
-
-  return { configLoader, fileManager, stateManager, llmClient, workflow };
-}
-
 function handleError(error: any) {
   if (error instanceof Error) {
-    console.error(chalk.default.red('\n✗ Error:'), error.message);
+    console.error(chalk.default.red('\nError:'), error.message);
   } else {
-    console.error(chalk.default.red('\n✗ Unexpected error:'), error);
+    console.error(chalk.default.red('\nUnexpected error:'), error);
   }
   process.exit(1);
 }
 
-program.parse();
+// If no subcommand given, launch REPL
+if (process.argv.length <= 2) {
+  try {
+    const repl = new DDXRepl();
+    repl.start();
+  } catch (error) {
+    handleError(error);
+  }
+} else {
+  program.parse();
+}

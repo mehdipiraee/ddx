@@ -32,7 +32,7 @@ export class ConversationService {
     if (this.documentService.documentExists(documentType)) {
       throw new Error(
         `Document already exists: ${docConfig.output}\n` +
-        `Use 'ddx continue ${documentType}' to resume editing.`
+        `Use the REPL ('ddx') or /define skill to update it.`
       );
     }
 
@@ -92,7 +92,7 @@ export class ConversationService {
     if (!state) {
       throw new Error(
         `No active workflow found for ${documentType}.\n` +
-        `Run 'ddx create ${documentType}' to start.`
+        `Start a new one via the REPL ('ddx') or the corresponding skill.`
       );
     }
 

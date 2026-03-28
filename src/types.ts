@@ -65,3 +65,41 @@ export interface ConsistencyCheckResult {
   inconsistencies: ConsistencyIssue[];
   chain: string[];
 }
+
+// Engine result types (structured returns, no console output)
+
+export interface CreateResult {
+  response: string;
+  documentWritten: boolean;
+  documentPath?: string;
+  consistencyCheck?: CheckResult;
+}
+
+export interface ContinueResult {
+  response: string;
+  documentWritten: boolean;
+  documentPath?: string;
+  isComplete: boolean;
+  consistencyCheck?: CheckResult;
+}
+
+export interface CheckResult {
+  documentType: string;
+  documentName: string;
+  chain: string[];
+  inconsistencies: ConsistencyIssue[];
+  allConsistent: boolean;
+}
+
+export interface DocumentStatus {
+  type: string;
+  name: string;
+  exists: boolean;
+  outputPath: string;
+  upstream: string[];
+  downstream: string[];
+}
+
+export interface ListResult {
+  documents: DocumentStatus[];
+}
