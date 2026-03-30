@@ -71,7 +71,7 @@ export class InitCommand {
       this.logStep('Pre-flight check', 'skip', 'force mode');
     }
 
-    // Scaffold tooling
+    // Create .ddx-tooling/
     try {
       const result = this.createDirectory(toolingDir);
       this.logStep('Create .ddx-tooling/', result === 'created' ? 'ok' : 'skip', result === 'exists' ? 'already exists' : undefined);
@@ -82,60 +82,36 @@ export class InitCommand {
     // Config
     try {
       const result = this.copyConfigFile(toolingDir, options.force);
-      this.logStep('Copy config.yaml', result === 'skipped' ? 'skip' : 'ok', result);
+      this.logStep('Create config.yaml', result === 'skipped' ? 'skip' : 'ok', result);
     } catch (error) {
-      this.logStep('Copy config.yaml', 'fail', (error as Error).message);
+      this.logStep('Create config.yaml', 'fail', (error as Error).message);
     }
 
     // Prompts
-    try {
-      const result = this.copyDirectory(
-        path.join(this.ddxRootDir, 'prompts'),
-        path.join(toolingDir, 'prompts'),
-        options.force
-      );
-      this.logStep(
-        'Copy prompts/',
-        result.status === 'skipped' ? 'skip' : 'ok',
-        result.status === 'skipped' ? 'already exists' : `${result.status}: ${result.files.join(', ')}`
-      );
-    } catch (error) {
-      this.logStep('Copy prompts/', 'fail', (error as Error).message);
-    }
+    this.copyDirectoryWithFileLogging(
+      path.join(this.ddxRootDir, 'prompts'),
+      path.join(toolingDir, 'prompts'),
+      'Create prompts/',
+      options.force
+    );
 
     // Templates
-    try {
-      const result = this.copyDirectory(
-        path.join(this.ddxRootDir, 'templates'),
-        path.join(toolingDir, 'templates'),
-        options.force
-      );
-      this.logStep(
-        'Copy templates/',
-        result.status === 'skipped' ? 'skip' : 'ok',
-        result.status === 'skipped' ? 'already exists' : `${result.status}: ${result.files.join(', ')}`
-      );
-    } catch (error) {
-      this.logStep('Copy templates/', 'fail', (error as Error).message);
-    }
+    this.copyDirectoryWithFileLogging(
+      path.join(this.ddxRootDir, 'templates'),
+      path.join(toolingDir, 'templates'),
+      'Create templates/',
+      options.force
+    );
 
     // Skills
-    try {
-      const result = this.copyDirectory(
-        path.join(this.ddxRootDir, 'commands'),
-        path.join(targetDir, '.claude', 'commands'),
-        options.force
-      );
-      this.logStep(
-        'Copy skills to .claude/commands/',
-        result.status === 'skipped' ? 'skip' : 'ok',
-        result.status === 'skipped' ? 'already exists' : `${result.status}: ${result.files.join(', ')}`
-      );
-    } catch (error) {
-      this.logStep('Copy skills to .claude/commands/', 'fail', (error as Error).message);
-    }
+    this.copyDirectoryWithFileLogging(
+      path.join(this.ddxRootDir, 'commands'),
+      path.join(targetDir, '.claude', 'commands'),
+      'Create skills in .claude/commands/',
+      options.force
+    );
 
-    // Output directory
+    // Create ddx/
     try {
       const result = this.createDirectory(ddxDir);
       this.logStep('Create ddx/', result === 'created' ? 'ok' : 'skip', result === 'exists' ? 'already exists' : undefined);
@@ -167,7 +143,7 @@ export class InitCommand {
       this.logStep('Configure Claude Code permissions', 'fail', (error as Error).message);
     }
 
-    // Project scan
+    // Scan for existing files
     const hasCode = this.hasExistingFiles(targetDir);
     this.logStep('Scan for existing files', 'ok', hasCode ? 'files detected' : 'empty project');
 
@@ -175,17 +151,18 @@ export class InitCommand {
     this.printSummary();
 
     // Next step
+    const projectName = path.basename(targetDir);
     console.log(dim('  ─────────────────────────────────────────\n'));
-    console.log(`  DDX is ready. Open ${bold('Claude Code')} in this project\n`);
     if (hasCode) {
-      console.log(`  Existing files were found. Run this in Claude Code`);
-      console.log(`  to document your current project:\n`);
-      console.log(cyan('    /ddx.derive'));
-      console.log(dim('    Analyzes your codebase and generates product docs\n'));
+      console.log(`  DDX is ready for ${bold(projectName)}.`);
+      console.log(`  Seems like a ${cyan('project already exists.')}`);
+      console.log(`  Open Claude Code and run ${cyan('/ddx.derive')}`);
+      console.log(dim('  Analyzes your codebase and generates product docs.\n'));
     } else {
-      console.log(`  This is an empty project. Run this in Claude Code\n`);
-      console.log(cyan('    /ddx.define'));
-      console.log(dim('    Start defining your product from scratch\n'));
+      console.log(`  DDX is ready for ${bold(projectName)}.`);
+      console.log(`  This seems like a ${cyan('brand new project.')}`);
+      console.log(`  Open Claude Code and run ${cyan('/ddx.define')}`);
+      console.log(dim('  Start defining your product from scratch.\n'));
     }
   }
 
@@ -198,6 +175,56 @@ export class InitCommand {
 
     const detailStr = detail ? dim(` (${detail})`) : '';
     console.log(`${icon} ${label}${detailStr}`);
+  }
+
+  private logSubStep(label: string, status: 'ok' | 'skip' | 'fail', detail?: string): void {
+    this.steps.push({ label, status, detail });
+
+    const icon = status === 'ok' ? green('    ✓')
+               : status === 'skip' ? yellow('    ○')
+               : red('    ✗');
+
+    const detailStr = detail ? dim(` (${detail})`) : '';
+    console.log(`${icon} ${label}${detailStr}`);
+  }
+
+  private copyDirectoryWithFileLogging(sourceDir: string, targetDir: string, dirLabel: string, force?: boolean): void {
+    if (!fs.existsSync(sourceDir)) {
+      this.logStep(dirLabel, 'fail', `source not found: ${sourceDir}`);
+      return;
+    }
+
+    const dirExisted = fs.existsSync(targetDir);
+
+    if (!force && dirExisted) {
+      this.logStep(dirLabel, 'skip', 'already exists');
+      return;
+    }
+
+    try {
+      this.fileManager.ensureDirectory(targetDir);
+      this.logStep(dirLabel, 'ok', dirExisted ? 'overwritten' : 'created');
+    } catch (error) {
+      this.logStep(dirLabel, 'fail', (error as Error).message);
+      return;
+    }
+
+    const files = fs.readdirSync(sourceDir).filter((f) => !f.startsWith('.'));
+
+    for (const file of files) {
+      const sourcePath = path.join(sourceDir, file);
+      const targetPath = path.join(targetDir, file);
+
+      if (fs.statSync(sourcePath).isDirectory()) continue;
+
+      try {
+        const fileExisted = fs.existsSync(targetPath);
+        fs.copyFileSync(sourcePath, targetPath);
+        this.logSubStep(file, 'ok', fileExisted ? 'overwritten' : 'created');
+      } catch (error) {
+        this.logSubStep(file, 'fail', (error as Error).message);
+      }
+    }
   }
 
   private printSummary(): void {
