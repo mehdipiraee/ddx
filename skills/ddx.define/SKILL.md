@@ -57,4 +57,6 @@ When all sections are filled (or the user says "that's good" / "done"):
 
 1. Re-read the file in case the user made final edits.
 2. Do a final write to clean up any remaining placeholder text.
-3. Tell the user the definition is complete and suggest: **`/ddx.design`** to create the Design.
+3. Determine the next step based on the definition content:
+   - If the product has a user interface (web app, mobile app, dashboard, portal, etc.): tell the user: "The next step is **`/ddx.design`** to create the Design. Want me to run it?"
+   - If the product is technical with no UI (API, service, library, CLI, data pipeline, worker, etc.): tell the user: "This is a technical product without a UI, so we skip design. The next step is **`/ddx.spec`** to create the Spec. Want me to run it?"

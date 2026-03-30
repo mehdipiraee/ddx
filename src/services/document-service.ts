@@ -31,6 +31,35 @@ export class DocumentService {
   }
 
   /**
+   * Check if design is required by reading the definition content.
+   * Technical products (APIs, services, CLIs, pipelines, libraries, etc.) skip design.
+   */
+  isDesignRequired(): boolean {
+    const config = this.configLoader.load();
+    const defConfig = config.documents['definition'];
+    if (!defConfig || !this.fileManager.fileExists(defConfig.output)) {
+      return true; // Default to requiring design if we can't check
+    }
+    const definition = this.fileManager.readFile(defConfig.output).toLowerCase();
+    const technicalSignals = [
+      'api', 'service', 'library', 'sdk', 'cli', 'command-line', 'command line',
+      'data pipeline', 'etl', 'worker', 'daemon', 'backend', 'microservice',
+      'message broker', 'queue', 'cron', 'batch', 'infrastructure',
+    ];
+    const uiSignals = [
+      'web app', 'mobile app', 'dashboard', 'portal', 'user interface',
+      'screen', 'page', 'frontend', 'ui', 'ux', 'wireframe', 'browser',
+      'desktop app', 'webapp', 'website',
+    ];
+    const hasTechnical = technicalSignals.some(s => definition.includes(s));
+    const hasUI = uiSignals.some(s => definition.includes(s));
+    // If both signals present, UI wins (product has visual components)
+    if (hasUI) return true;
+    if (hasTechnical) return false;
+    return true; // Default to requiring design
+  }
+
+  /**
    * Load upstream documents for a given document type
    */
   loadUpstreamDocuments(upstreamTypes: string[]): string {
@@ -45,6 +74,10 @@ export class DocumentService {
       const upstreamConfig = config.documents[upstreamType];
 
       if (!this.fileManager.fileExists(upstreamConfig.output)) {
+        // Skip design gracefully for technical products without a UI
+        if (upstreamType === 'design' && !this.isDesignRequired()) {
+          continue;
+        }
         throw new Error(
           `Upstream document required but not found: ${upstreamConfig.output}\n` +
           `Please create '${upstreamType}' first via the REPL ('ddx') or the corresponding skill.`
@@ -133,32 +166,36 @@ export class DocumentService {
   }
 
   /**
-   * Build document chain showing upstream and downstream relationships
+   * Build document chain showing upstream and downstream relationships.
+   * Skips design for technical products without a UI.
    */
   buildDocumentChain(currentDocType: string): string[] {
     const config = this.configLoader.load();
     const currentConfig = config.documents[currentDocType];
+    const skipDesign = !this.isDesignRequired();
     const chain: string[] = [];
 
     // Add upstream documents
     let upstreamTypes = currentConfig.upstream;
     while (upstreamTypes.length > 0) {
       const upstreamType = upstreamTypes[0];
-      if (!chain.includes(upstreamType)) {
+      if (!chain.includes(upstreamType) && !(skipDesign && upstreamType === 'design')) {
         chain.unshift(upstreamType);
       }
       upstreamTypes = config.documents[upstreamType]?.upstream || [];
     }
 
     // Add current document
-    chain.push(currentDocType);
+    if (!(skipDesign && currentDocType === 'design')) {
+      chain.push(currentDocType);
+    }
 
     // Add downstream documents
     const addDownstream = (docType: string) => {
       const docConfig = config.documents[docType];
       if (docConfig && docConfig.downstream && docConfig.downstream.length > 0) {
         for (const downType of docConfig.downstream) {
-          if (!chain.includes(downType)) {
+          if (!chain.includes(downType) && !(skipDesign && downType === 'design')) {
             chain.push(downType);
             addDownstream(downType);
           }

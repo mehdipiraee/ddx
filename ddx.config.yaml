@@ -12,7 +12,7 @@ documents:
 
   design:
     name: "Design"
-    mode: "ascii"   # "ascii" or "html"
+    mode: "ascii"   # "ascii" or "html" — skipped for technical products without a UI (detected from definition).
     prompt: ".ddx-tooling/prompts/design_prompt.md"
     template: ".ddx-tooling/templates/design_template.md"
     output: "ddx/{scope}/design.md"

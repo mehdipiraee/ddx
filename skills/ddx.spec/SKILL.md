@@ -26,15 +26,18 @@ IMPORTANT: Use file reading/glob tools, NOT shell commands. Do NOT use Bash to c
 
 ## Ensure Upstream Exists
 
-Check if `ddx/{scope}/definition.md` and `ddx/{scope}/design.md` exist.
-
-For each missing upstream doc, generate it now:
-1. Read its prompt and template from config.
-2. Using the user's description, any product-level context (`ddx/product/*.md`), and any upstream docs that DO exist, generate the document. Fill every section — no placeholders. Ask the user brief clarifying questions ONLY if critical information is missing.
+Check if `ddx/{scope}/definition.md` exists. If not, generate it now:
+1. Read the definition prompt and template from config.
+2. Using the user's description and any product-level context (`ddx/product/*.md`), generate the definition. Fill every section — no placeholders. Ask the user brief clarifying questions ONLY if critical information is missing.
 3. Write it to the appropriate path.
-4. Tell the user which docs you also created.
+4. Tell the user you also created it.
 
-Generate in order: definition first, then design (since design depends on definition).
+### Check if design is needed
+
+Read `ddx/{scope}/definition.md`. Determine if the product has a user interface:
+
+- **Has UI** (web app, mobile app, dashboard, portal, etc.): check if `ddx/{scope}/design.md` (or `design.html`) exists. If not, generate it — read the design prompt and template from config, generate the document, write it, and tell the user.
+- **No UI** (API, service, library, CLI, data pipeline, worker, daemon, etc.): skip design entirely. Do NOT generate a design document. Proceed with only the definition as upstream context.
 
 ## Generate
 
@@ -54,4 +57,4 @@ If the user says they've made changes or want something adjusted:
 2. Make the requested changes.
 3. Write the updated file.
 
-When the user is satisfied, suggest the next step: **`/ddx.plan`**.
+When the user is satisfied, tell them: "The next step is **`/ddx.plan`** to create the Plan. Want me to run it?"

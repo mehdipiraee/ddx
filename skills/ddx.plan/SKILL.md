@@ -30,28 +30,27 @@ IMPORTANT: Use file reading/glob tools, NOT shell commands. Do NOT use Bash to c
 
 ## Ensure Upstream Exists
 
-Check if `ddx/{scope}/definition.md`, `ddx/{scope}/design.md`, and `ddx/{scope}/spec.md` exist.
+Check if `ddx/{scope}/definition.md` and `ddx/{scope}/spec.md` exist. For each missing doc, generate it now (read its prompt and template from config, use available context, write to disk, tell the user). Generate definition first, then spec.
 
-For each missing upstream doc, generate it now:
-1. Read its prompt and template from config.
-2. Using the user's description, any product-level context (`ddx/product/*.md`), and any upstream docs that DO exist, generate the document. Fill every section — no placeholders. Ask the user brief clarifying questions ONLY if critical information is missing.
-3. Write it to the appropriate path.
-4. Tell the user which docs you also created.
+### Check if design is needed
 
-Generate in order: definition first, then design, then spec.
+Read `ddx/{scope}/definition.md`. Determine if the product has a user interface:
+
+- **Has UI** (web app, mobile app, dashboard, portal, etc.): check if `ddx/{scope}/design.md` (or `design.html`) exists. If not, generate it before generating spec.
+- **No UI** (API, service, library, CLI, data pipeline, worker, daemon, etc.): skip design entirely. Do NOT generate a design document.
 
 ## Generate
 
 1. Read the plan prompt file.
 2. Read the plan template file.
-3. Read the upstream documents (Definition, Design, Spec).
+3. Read the upstream documents — Definition, Spec, and Design (only if design exists / product has UI).
 4. If the output file already exists, read it — you are UPDATING.
 
 ### Product Plan
 
 The product plan sequences which capabilities to build and in what order. It does NOT contain implementation steps.
 
-1. Read the product definition, design, and spec.
+1. Read the product definition and spec (and design, if it exists).
 2. Identify all distinct capabilities described in these documents.
 3. For each capability, determine:
    - A short kebab-case name (suitable as a folder name)
@@ -78,7 +77,7 @@ The product plan sequences which capabilities to build and in what order. It doe
 
 Detailed build steps for a single capability.
 
-1. Read the capability's definition, design, and spec.
+1. Read the capability's definition and spec (and design, if it exists).
 2. Also read `ddx/product/plan.md` to understand where this capability fits and what it depends on. If dependency capabilities have specs, skim them for interfaces this capability integrates with.
 3. Decompose into ordered steps from low to high complexity. Each step builds on the previous.
 4. Write the plan to the resolved output path using the template structure.
@@ -93,7 +92,7 @@ If the user says they've made changes or want something adjusted:
 2. Make the requested changes.
 3. Write the updated file.
 
-When the user is satisfied, tell them the plan is finalized and ready to build.
+When the user is satisfied, tell them: "The plan is finalized. The next step is **`/ddx.build`** to start building. Want me to run it?"
 
 ### Product Plan Auto-Update
 

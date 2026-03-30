@@ -47,7 +47,16 @@ From the user's description, figure out:
 
 After the change is made, check every document BELOW the affected level in the same scope:
 
-For each downstream document that exists:
+### Determine the cascade chain
+
+Read `ddx/{scope}/definition.md`. Determine if the product has a user interface:
+
+- **Has UI** (web app, mobile app, dashboard, portal, etc.): cascade chain is `definition → design → spec → plan`.
+- **No UI** (API, service, library, CLI, data pipeline, worker, daemon, etc.): cascade chain is `definition → spec → plan`. Skip design entirely.
+
+### Apply the cascade
+
+For each downstream document in the chain that exists:
 1. Read it.
 2. Compare it against the updated upstream document(s).
 3. If it's still consistent — say so and move on.
@@ -55,4 +64,4 @@ For each downstream document that exists:
    - If yes: update it, write to disk, then continue checking further downstream.
    - If no: skip it and warn that it's now out of sync.
 
-Work through the chain in order: definition → design → spec → plan. Don't skip levels.
+Don't skip levels in the chain.

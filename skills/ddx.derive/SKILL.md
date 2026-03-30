@@ -23,8 +23,10 @@ IMPORTANT: Do NOT use Bash to create directories — just write files directly w
    - Read main entry points and directory structure
    - Skim key source files to understand the architecture
 4. Generate `ddx/product/definition.md` using the definition template — fill sections from what you can infer. Be factual, only include what the code evidence supports.
-5. Generate `ddx/product/design.md` using the design template — describe the screens/interfaces that exist as ASCII wireframes.
+5. Determine if the product has a user interface based on what you found in the codebase:
+   - **Has UI** (web app, mobile app, dashboard, portal, frontend code, templates, views, etc.): generate `ddx/product/design.md` using the design template — describe the screens/interfaces that exist as ASCII wireframes.
+   - **No UI** (API, service, library, CLI, data pipeline, worker, daemon, etc.): skip design entirely. Do NOT generate a design document.
 6. Generate `ddx/product/spec.md` using the spec template — describe the architecture as-built with an ASCII diagram.
-7. Tell the user: "I've derived product docs from your codebase. Please review the files in `ddx/product/` and edit them. When you're satisfied, run `/ddx.define` to start defining your first capability."
+7. Tell the user: "I've derived product docs from your codebase. Please review the files in `ddx/product/` and edit them. When you're satisfied, the next step is **`/ddx.define`** to start defining your first capability. Want me to run it?"
 
 If you cannot confidently fill the templates (codebase is too ambiguous), tell the user: "I couldn't confidently derive product docs from your codebase. Run `/ddx.define` to define the product from scratch."

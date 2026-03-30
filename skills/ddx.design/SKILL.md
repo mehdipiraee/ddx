@@ -43,6 +43,17 @@ If it does NOT exist — generate it now:
 3. Write it to `ddx/{scope}/definition.md`.
 4. Tell the user: "I've also created the definition at `ddx/{scope}/definition.md`."
 
+## Technical Product Detection
+
+Read `ddx/{scope}/definition.md`. Based on the proposed solution and the overall product description, determine if this product has a user interface:
+
+- **Needs design** (has UI): web apps, mobile apps, desktop apps, dashboards, portals, browser extensions, or anything with screens that end-users directly see and interact with visually.
+- **Skip design** (no UI): APIs, services, libraries, SDKs, CLIs, data pipelines, ETL jobs, workers, daemons, infrastructure tools, message brokers, or any product where the primary interface is code, configuration, or command-line — not visual screens.
+
+If the product does NOT need a user interface:
+1. Tell the user: "This is a technical product without a user interface — the design phase is not needed. The next step is **`/ddx.spec`** to create the Spec. Want me to run it?"
+2. **STOP here. Do not generate a design document.**
+
 ## Generate
 
 1. Read the design prompt file (ascii or html, based on mode).
@@ -73,4 +84,4 @@ If the user says they've made changes or want something adjusted:
 2. Make the requested changes.
 3. Write the updated file.
 
-When the user is satisfied, suggest the next step: **`/ddx.spec`**.
+When the user is satisfied, tell them: "The next step is **`/ddx.spec`** to create the Spec. Want me to run it?"

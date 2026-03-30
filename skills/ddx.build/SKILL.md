@@ -28,15 +28,21 @@ IMPORTANT: Use file reading/glob tools, NOT shell commands for file discovery. D
 
 ## Load Context
 
-Read all four documents for this scope:
+Read these documents for this scope:
 - `ddx/{scope}/definition.md` — the what and why
-- `ddx/{scope}/design.md` — the wireframes and interaction design
 - `ddx/{scope}/spec.md` — the architecture and technical decisions
 - `ddx/{scope}/plan.md` — the ordered build steps
 
 Also read `ddx/product/definition.md` and `ddx/product/spec.md` if they exist and scope is not `product`, for product-level context.
 
-If any documents are missing, generate them now (read their prompts and templates from config, use available context, write to disk) rather than stopping.
+### Check if design is needed
+
+Read the definition. Determine if the product has a user interface:
+
+- **Has UI** (web app, mobile app, dashboard, portal, etc.): also read `ddx/{scope}/design.md` (or `design.html`) — the wireframes and interaction design. If missing, generate it.
+- **No UI** (API, service, library, CLI, data pipeline, worker, daemon, etc.): skip design entirely. Do NOT load or generate a design document.
+
+If any required documents are missing (definition, spec, plan — and design if UI product), generate them now (read their prompts and templates from config, use available context, write to disk) rather than stopping.
 
 ## Build
 
@@ -55,4 +61,6 @@ Execute the plan step by step:
 
 ## Completion
 
-When all steps are done, tell the user: "All steps in the plan are complete. The {scope} capability is built."
+When all steps are done:
+- If this is a capability and there are more capabilities in the product plan that are not yet built, tell the user: "The {scope} capability is built. The next capability in the product plan is **{next-capability}**. Want me to run **`/ddx.build`** for it?"
+- If all capabilities are built (or this is a product-level build), tell the user: "All steps in the plan are complete. The {scope} capability is built."

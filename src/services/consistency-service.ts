@@ -43,9 +43,13 @@ export class ConsistencyService {
 
     const inconsistencies: ConsistencyIssue[] = [];
 
+    // Skip design in consistency checks for technical products without a UI
+    const skipDesign = !this.documentService.isDesignRequired();
+
     // Check upstream consistency
     if (docConfig.upstream.length > 0) {
       for (const upstreamType of docConfig.upstream) {
+        if (skipDesign && upstreamType === 'design') continue;
         const result = await this.checkUpstreamConsistency(documentType, currentDocument, upstreamType);
         if (result) {
           inconsistencies.push(result);
@@ -56,6 +60,7 @@ export class ConsistencyService {
     // Check downstream consistency
     if (docConfig.downstream.length > 0) {
       for (const downstreamType of docConfig.downstream) {
+        if (skipDesign && downstreamType === 'design') continue;
         const result = await this.checkDownstreamConsistency(documentType, currentDocument, downstreamType);
         if (result) {
           inconsistencies.push(result);

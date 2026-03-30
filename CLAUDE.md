@@ -24,11 +24,11 @@ Three CLI commands: `ddx init`, `ddx list`, and `ddx` (REPL launcher). Derive is
 |-------|--------------|--------|----------|
 | `/ddx.derive` | derive from codebase | product/* | none |
 | `/ddx.define` | definition | definition.md | none (root) |
-| `/ddx.design` | design | design.md | definition |
-| `/ddx.spec` | spec | spec.md | definition, design |
-| `/ddx.plan` | plan | plan.md | definition, design, spec |
+| `/ddx.design` | design (skipped for technical products without UI) | design.md | definition |
+| `/ddx.spec` | spec | spec.md | definition, design (if UI product) |
+| `/ddx.plan` | plan | plan.md | definition, design (if UI product), spec |
 | `/ddx.update` | update | any doc | all docs in scope |
-| `/ddx.build` | build | code | plan, spec, design, definition |
+| `/ddx.build` | build | code | plan, spec, design (if UI product), definition |
 
 Skills don't call the ddx engine programmatically. They tell Claude Code to read files and write documents directly. The engine (`src/engine.ts`) is for the REPL and library consumers.
 
