@@ -157,11 +157,13 @@ export class InitCommand {
       console.log(`  DDX is ready for ${bold(projectName)}.`);
       console.log(`  Seems like a ${cyan('project already exists.')}`);
       console.log(`  Open Claude Code and run ${cyan('/ddx.derive')}`);
+      console.log(`  Or run ${cyan('claude /ddx.derive')} from your terminal.`);
       console.log(dim('  Analyzes your codebase and generates product docs.\n'));
     } else {
       console.log(`  DDX is ready for ${bold(projectName)}.`);
       console.log(`  This seems like a ${cyan('brand new project.')}`);
       console.log(`  Open Claude Code and run ${cyan('/ddx.define')}`);
+      console.log(`  Or run ${cyan('claude /ddx.define')} from your terminal.`);
       console.log(dim('  Start defining your product from scratch.\n'));
     }
   }
@@ -386,10 +388,10 @@ export class InitCommand {
   private updateClaudePermissions(targetDir: string): boolean {
     const settingsPath = path.join(targetDir, '.claude', 'settings.local.json');
     const ddxPermissions = [
-      'Read(/ddx/**)',
-      'Edit(/ddx/**)',
-      'Write(/ddx/**)',
-      'Read(/.ddx-tooling/**)',
+      'Read(ddx/**)',
+      'Edit(ddx/**)',
+      'Write(ddx/**)',
+      'Read(.ddx-tooling/**)',
       'Bash(mkdir -p ddx/:*)',
     ];
 
