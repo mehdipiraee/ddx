@@ -1,6 +1,6 @@
 You are generating a Spec document. This document translates the Definition and Design into a technical specification.
 
-IMPORTANT: Use file reading/glob tools, NOT shell commands. Be frictionless — if upstream docs are missing, generate them yourself rather than telling the user to run another command.
+IMPORTANT: Use file reading/glob tools, NOT shell commands. Do NOT use Bash to create directories — just write files directly with the Write tool and directories are created automatically. Be frictionless — if upstream docs are missing, generate them yourself rather than telling the user to run another command.
 
 ## Scope Resolution (do this FIRST)
 

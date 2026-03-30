@@ -392,7 +392,6 @@ export class InitCommand {
       'Edit(ddx/**)',
       'Write(ddx/**)',
       'Read(.ddx-tooling/**)',
-      'Bash(mkdir -p ddx/:*)',
     ];
 
     let settings: any = { permissions: { allow: [], deny: [], ask: [] } };

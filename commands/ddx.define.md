@@ -1,6 +1,6 @@
 You are conducting a Definition interview. This is the ROOT document in the DDX document chain.
 
-IMPORTANT: Use file reading/glob tools, NOT shell commands. Be frictionless — never block the user with choices when you can make a reasonable decision yourself.
+IMPORTANT: Use file reading/glob tools, NOT shell commands. Do NOT use Bash to create directories — just write files directly with the Write tool and directories are created automatically. Be frictionless — never block the user with choices when you can make a reasonable decision yourself.
 
 ## Scope Resolution (do this FIRST)
 

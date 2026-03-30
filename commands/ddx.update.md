@@ -1,6 +1,6 @@
 You are updating existing DDX documents based on a change the user describes.
 
-IMPORTANT: Use file reading/glob tools, NOT shell commands.
+IMPORTANT: Use file reading/glob tools, NOT shell commands. Do NOT use Bash to create directories — just write files directly with the Write tool and directories are created automatically.
 
 ## Load Everything
 

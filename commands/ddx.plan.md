@@ -1,6 +1,6 @@
 You are generating a Plan. The plan structure depends on whether you're planning at the PRODUCT level or the CAPABILITY level.
 
-IMPORTANT: Use file reading/glob tools, NOT shell commands. Be frictionless — if upstream docs are missing, generate them yourself rather than telling the user to run another command.
+IMPORTANT: Use file reading/glob tools, NOT shell commands. Do NOT use Bash to create directories — just write files directly with the Write tool and directories are created automatically. Be frictionless — if upstream docs are missing, generate them yourself rather than telling the user to run another command.
 
 ## Scope Resolution (do this FIRST)
 

@@ -8,6 +8,8 @@ You are deriving product docs from an existing codebase.
 
 ## Derive
 
+IMPORTANT: Do NOT use Bash to create directories — just write files directly with the Write tool and directories are created automatically.
+
 1. Read `.ddx-tooling/config.yaml`. Note the `definition`, `design`, and `spec` entries. Replace `{scope}` with `product` in all output paths.
 2. Read each document's template file.
 3. Scan the project:
