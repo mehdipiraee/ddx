@@ -2,6 +2,14 @@
 # Defines document types, templates, prompts, and dependencies
 
 documents:
+  mandate:
+    name: "Mandate"
+    prompt: ".ddx-tooling/prompts/mandate_prompt.md"
+    template: ".ddx-tooling/templates/mandate_template.md"
+    output: "ddx/MANDATE.md"
+    upstream: []
+    downstream: []
+
   definition:
     name: "Definition"
     prompt: ".ddx-tooling/prompts/definition_prompt.md"

@@ -67,6 +67,7 @@ DDX has 7 skills you run as slash commands in Claude Code. Each one guides you t
 
 | Skill | What it does | Next step |
 |-------|-------------|-----------|
+| `/ddx.mandate` | Creates the project mandate — identity, constraints, always/never rules | `/ddx.derive` or `/ddx.define` |
 | `/ddx.derive` | Analyzes existing code and generates product docs | `/ddx.define` (for first capability) |
 | `/ddx.define` | Interactive interview to define the product or a capability | `/ddx.design` or `/ddx.spec` |
 | `/ddx.design` | Generates wireframes and interaction design | `/ddx.spec` |
@@ -88,6 +89,7 @@ The first thing you define becomes the **product**. Everything after that is a *
 
 ```
 ddx/
+  MANDATE.md          <-- project-level mandate (linked from CLAUDE.md)
   product/            <-- defined first (the overall product)
     definition.md
     design.md
@@ -137,7 +139,9 @@ my-project/
   .claude/
     skills/              # Claude Code skills (the /ddx.* commands)
     settings.local.json  # Auto-approved permissions for ddx/ files
-  ddx/                   # Output directory for all generated documents
+  ddx/
+    MANDATE.md           # Project mandate — identity, constraints, rules for AI agents
+  CLAUDE.md              # References the mandate so Claude Code always reads it
 ```
 
 - **`.ddx-tooling/`** -- Configuration and prompt/template files DDX uses to generate documents. You can customize the prompts and templates.

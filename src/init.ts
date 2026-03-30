@@ -143,6 +143,22 @@ export class InitCommand {
       this.logStep('Create ddx/', 'fail', (error as Error).message);
     }
 
+    // Mandate
+    try {
+      const result = this.createMandate(ddxDir, options.force);
+      this.logStep('Create ddx/MANDATE.md', result === 'skipped' ? 'skip' : 'ok', result);
+    } catch (error) {
+      this.logStep('Create ddx/MANDATE.md', 'fail', (error as Error).message);
+    }
+
+    // CLAUDE.md (reference to mandate)
+    try {
+      const result = this.updateClaudeMd(targetDir);
+      this.logStep('Link mandate in CLAUDE.md', result ? 'ok' : 'skip', result ? undefined : 'already linked');
+    } catch (error) {
+      this.logStep('Link mandate in CLAUDE.md', 'fail', (error as Error).message);
+    }
+
     // .env.example
     try {
       const result = this.createEnvExample(toolingDir, options.force);
@@ -565,6 +581,51 @@ export class InitCommand {
       `mode: "${mode}"   # "ascii" or "html"`
     );
     fs.writeFileSync(configPath, content, 'utf8');
+  }
+
+  private createMandate(ddxDir: string, force?: boolean): 'created' | 'overwritten' | 'skipped' {
+    const targetPath = path.join(ddxDir, 'MANDATE.md');
+    const existed = fs.existsSync(targetPath);
+
+    if (!force && existed) {
+      return 'skipped';
+    }
+
+    const sourcePath = path.join(this.ddxRootDir, 'templates', 'mandate_template.md');
+    if (!fs.existsSync(sourcePath)) {
+      throw new Error('Mandate template not found. Is DDX properly installed?');
+    }
+
+    fs.copyFileSync(sourcePath, targetPath);
+    return existed ? 'overwritten' : 'created';
+  }
+
+  private updateClaudeMd(targetDir: string): boolean {
+    const claudeMdPath = path.join(targetDir, 'CLAUDE.md');
+    const mandateRef = 'Read and follow the project mandate: ddx/MANDATE.md';
+
+    let existingContent = '';
+    if (fs.existsSync(claudeMdPath)) {
+      existingContent = this.fileManager.readFile(claudeMdPath);
+    }
+
+    if (existingContent.includes('ddx/MANDATE.md')) {
+      return false;
+    }
+
+    let newContent = existingContent;
+
+    if (existingContent) {
+      if (!existingContent.endsWith('\n')) {
+        newContent += '\n';
+      }
+      newContent += '\n' + mandateRef + '\n';
+    } else {
+      newContent = mandateRef + '\n';
+    }
+
+    this.fileManager.writeFile(claudeMdPath, newContent);
+    return true;
   }
 
   private isGitignored(entry: string, existingLines: string[]): boolean {

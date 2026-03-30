@@ -10,7 +10,7 @@
 
 ### Two Interfaces
 
-1. **Claude Code skills (primary)** — `/ddx.derive`, `/ddx.define`, `/ddx.design`, `/ddx.spec`, `/ddx.plan`, `/ddx.update`, `/ddx.build` as slash commands. Skills are SKILL.md files in `.claude/skills/{name}/`. They instruct Claude Code to read config/prompts/templates and conduct the interview directly. No API key needed — Claude Code IS the LLM.
+1. **Claude Code skills (primary)** — `/ddx.mandate`, `/ddx.derive`, `/ddx.define`, `/ddx.design`, `/ddx.spec`, `/ddx.plan`, `/ddx.update`, `/ddx.build` as slash commands. Skills are SKILL.md files in `.claude/skills/{name}/`. They instruct Claude Code to read config/prompts/templates and conduct the interview directly. No API key needed — Claude Code IS the LLM.
 
 2. **Interactive CLI (fallback)** — `ddx` with no args launches a REPL (`src/repl.ts`). Uses Anthropic API via the engine/service layer. Requires API key.
 
@@ -22,6 +22,7 @@ Three CLI commands: `ddx init`, `ddx list`, and `ddx` (REPL launcher). Derive is
 
 | Skill | Document Type | Output | Upstream |
 |-------|--------------|--------|----------|
+| `/ddx.mandate` | mandate | ddx/MANDATE.md | none (project-level) |
 | `/ddx.derive` | derive from codebase | product/* | none |
 | `/ddx.define` | definition | definition.md | none (root) |
 | `/ddx.design` | design (skipped for technical products without UI) | design.md | definition |
@@ -54,6 +55,7 @@ src/                  TypeScript source
     derive-service.ts         Codebase analysis + product doc generation
 
 skills/               Source skill files (scaffolded to .claude/skills/ by ddx init)
+  ddx.mandate/SKILL.md
   ddx.derive/SKILL.md
   ddx.define/SKILL.md
   ddx.design/SKILL.md
@@ -80,6 +82,7 @@ When defining a new capability, skills check existing capabilities for overlap. 
 
 ```
 ddx/
+├── MANDATE.md            ← project-level mandate (linked from CLAUDE.md)
 ├── product/
 │   ├── definition.md
 │   ├── design.md
