@@ -61,6 +61,22 @@ ddx init
 - **Existing code found** -- suggests `/ddx.derive` to generate docs from your codebase.
 - **Empty project** -- suggests `/ddx.define` to start from scratch.
 
+### Start Building
+
+From the CLI:
+
+```bash
+claude /ddx.build
+```
+
+Or in Claude Code:
+
+```
+/ddx.build
+```
+
+That's it. When you ask the agent to build something, `/ddx.build` handles the entire document chain automatically -- defining, designing, speccing, planning, and building in one go. If you'd prefer more control, you can walk through each step manually using the individual skills below.
+
 ### The Document Chain
 
 DDX has 7 skills you run as slash commands in Claude Code. Each one guides you through creating a specific document.

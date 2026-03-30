@@ -8,7 +8,7 @@
 *(Quant + qual evidence: data trends, error rates, time/cost waste, observed patterns, quotes.)*
 ## What is the impact of the problem?
 *(Time, cost, risk, morale, revenue, compliance — quantify if possible.)*
-## What's our proposed solution (product)?
+## What's our proposed solution?
 *(High-level concept only: form factor, boundaries, non-goals, no implementation or architecture.)*
 ## How will we measure success?
 *(Outcome-based metrics: time saved, accuracy improved, throughput, fewer handoffs, better client experience.)*
