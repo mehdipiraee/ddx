@@ -104,10 +104,10 @@ export class InitCommand {
     );
 
     // Skills
-    this.copyDirectoryWithFileLogging(
-      path.join(this.ddxRootDir, 'commands'),
-      path.join(targetDir, '.claude', 'commands'),
-      'Create skills in .claude/commands/',
+    this.copySkillsDirectory(
+      path.join(this.ddxRootDir, 'skills'),
+      path.join(targetDir, '.claude', 'skills'),
+      'Create skills in .claude/skills/',
       options.force
     );
 
@@ -190,6 +190,50 @@ export class InitCommand {
     console.log(`${icon} ${label}${detailStr}`);
   }
 
+  private copySkillsDirectory(sourceDir: string, targetDir: string, dirLabel: string, force?: boolean): void {
+    if (!fs.existsSync(sourceDir)) {
+      this.logStep(dirLabel, 'fail', `source not found: ${sourceDir}`);
+      return;
+    }
+
+    const dirExisted = fs.existsSync(targetDir);
+
+    if (!force && dirExisted) {
+      this.logStep(dirLabel, 'skip', 'already exists');
+      return;
+    }
+
+    try {
+      this.fileManager.ensureDirectory(targetDir);
+      this.logStep(dirLabel, 'ok', dirExisted ? 'overwritten' : 'created');
+    } catch (error) {
+      this.logStep(dirLabel, 'fail', (error as Error).message);
+      return;
+    }
+
+    const skillDirs = fs.readdirSync(sourceDir).filter((f) => {
+      return !f.startsWith('.') && fs.statSync(path.join(sourceDir, f)).isDirectory();
+    });
+
+    for (const skillDir of skillDirs) {
+      const sourceSkillDir = path.join(sourceDir, skillDir);
+      const targetSkillDir = path.join(targetDir, skillDir);
+      const sourceSkillFile = path.join(sourceSkillDir, 'SKILL.md');
+      const targetSkillFile = path.join(targetSkillDir, 'SKILL.md');
+
+      if (!fs.existsSync(sourceSkillFile)) continue;
+
+      try {
+        this.fileManager.ensureDirectory(targetSkillDir);
+        const fileExisted = fs.existsSync(targetSkillFile);
+        fs.copyFileSync(sourceSkillFile, targetSkillFile);
+        this.logSubStep(skillDir, 'ok', fileExisted ? 'overwritten' : 'created');
+      } catch (error) {
+        this.logSubStep(skillDir, 'fail', (error as Error).message);
+      }
+    }
+  }
+
   private copyDirectoryWithFileLogging(sourceDir: string, targetDir: string, dirLabel: string, force?: boolean): void {
     if (!fs.existsSync(sourceDir)) {
       this.logStep(dirLabel, 'fail', `source not found: ${sourceDir}`);
@@ -247,7 +291,7 @@ export class InitCommand {
       path.join(toolingDir, 'config.yaml'),
       path.join(toolingDir, 'prompts'),
       path.join(toolingDir, 'templates'),
-      path.join(targetDir, '.claude', 'commands'),
+      path.join(targetDir, '.claude', 'skills'),
     ];
 
     const existing = pathsToCheck.filter((p) => fs.existsSync(p));

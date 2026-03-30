@@ -1,3 +1,9 @@
+---
+name: ddx.design
+description: Generates a Design document that translates the Definition into wireframes and interaction design.
+disable-model-invocation: true
+---
+
 You are generating a Design document. This document translates the Definition into wireframes and interaction design.
 
 IMPORTANT: Use file reading/glob tools, NOT shell commands. Do NOT use Bash to create directories — just write files directly with the Write tool and directories are created automatically. Be frictionless — if upstream docs are missing, generate them yourself rather than telling the user to run another command.

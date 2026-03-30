@@ -1,3 +1,9 @@
+---
+name: ddx.define
+description: Conducts a Definition interview to create the root document in the DDX document chain. Defines the product or capability through guided questions.
+disable-model-invocation: true
+---
+
 You are conducting a Definition interview. This is the ROOT document in the DDX document chain.
 
 IMPORTANT: Use file reading/glob tools, NOT shell commands. Do NOT use Bash to create directories — just write files directly with the Write tool and directories are created automatically. Be frictionless — never block the user with choices when you can make a reasonable decision yourself.

@@ -2,7 +2,7 @@
 
 ## Package Development Rules
 
-- DDX is a package, not a standalone app. Users install it into other projects via `npm link` and run `ddx init` there. When asked to add or change something that lives in a consuming project (Claude Code skills in `.claude/commands/`, prompts, templates, config defaults, etc.), don't add it to this repo's own project files. Instead, update the ddx source code so that `ddx init` (or a future update command) scaffolds/copies those files into the consuming project. The consuming project is where the files need to end up — this repo is just the package that puts them there.
+- DDX is a package, not a standalone app. Users install it into other projects via `npm link` and run `ddx init` there. When asked to add or change something that lives in a consuming project (Claude Code skills in `.claude/skills/`, prompts, templates, config defaults, etc.), don't add it to this repo's own project files. Instead, update the ddx source code so that `ddx init` (or a future update command) scaffolds/copies those files into the consuming project. The consuming project is where the files need to end up — this repo is just the package that puts them there.
 
 - Always rebuild (`npm run build:backend && npm link`) after modifying TypeScript source files. Don't leave the build step for the user — changes aren't deployed until built.
 
@@ -10,7 +10,7 @@
 
 ### Two Interfaces
 
-1. **Claude Code skills (primary)** — `/ddx.derive`, `/ddx.define`, `/ddx.design`, `/ddx.spec`, `/ddx.plan`, `/ddx.update`, `/ddx.build` as slash commands. Skills are markdown files in `.claude/commands/`. They instruct Claude Code to read config/prompts/templates and conduct the interview directly. No API key needed — Claude Code IS the LLM.
+1. **Claude Code skills (primary)** — `/ddx.derive`, `/ddx.define`, `/ddx.design`, `/ddx.spec`, `/ddx.plan`, `/ddx.update`, `/ddx.build` as slash commands. Skills are SKILL.md files in `.claude/skills/{name}/`. They instruct Claude Code to read config/prompts/templates and conduct the interview directly. No API key needed — Claude Code IS the LLM.
 
 2. **Interactive CLI (fallback)** — `ddx` with no args launches a REPL (`src/repl.ts`). Uses Anthropic API via the engine/service layer. Requires API key.
 
@@ -53,14 +53,14 @@ src/                  TypeScript source
     consistency-service.ts    LLM-based consistency checking
     derive-service.ts         Codebase analysis + product doc generation
 
-commands/             Source skill files (scaffolded to .claude/commands/ by ddx init)
-  ddx.derive.md
-  ddx.define.md
-  ddx.design.md
-  ddx.spec.md
-  ddx.plan.md
-  ddx.update.md
-  ddx.build.md
+skills/               Source skill files (scaffolded to .claude/skills/ by ddx init)
+  ddx.derive/SKILL.md
+  ddx.define/SKILL.md
+  ddx.design/SKILL.md
+  ddx.spec/SKILL.md
+  ddx.plan/SKILL.md
+  ddx.update/SKILL.md
+  ddx.build/SKILL.md
 
 prompts/              Source prompt files (scaffolded to .ddx-tooling/prompts/ by ddx init)
 templates/            Source template files (scaffolded to .ddx-tooling/templates/ by ddx init)
@@ -94,4 +94,4 @@ ddx/
 
 ### Config
 
-Consuming projects have `.ddx-tooling/config.yaml` (copied from `ddx.config.yaml` during `ddx init`). It defines document types, their prompt/template/output paths (with `{scope}` placeholder), upstream/downstream relationships, and LLM settings. Skills land in `.claude/commands/` of the consuming project.
+Consuming projects have `.ddx-tooling/config.yaml` (copied from `ddx.config.yaml` during `ddx init`). It defines document types, their prompt/template/output paths (with `{scope}` placeholder), upstream/downstream relationships, and LLM settings. Skills land in `.claude/skills/` of the consuming project.

@@ -1,3 +1,9 @@
+---
+name: ddx.derive
+description: Derives product documentation from an existing codebase. Analyzes source code, README, and manifest files to generate definition, design, and spec documents.
+disable-model-invocation: true
+---
+
 You are deriving product docs from an existing codebase.
 
 ## Preconditions

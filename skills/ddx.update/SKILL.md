@@ -1,3 +1,9 @@
+---
+name: ddx.update
+description: Updates existing DDX documents based on a change. Determines impact, updates affected documents, and cascades changes downstream.
+disable-model-invocation: true
+---
+
 You are updating existing DDX documents based on a change the user describes.
 
 IMPORTANT: Use file reading/glob tools, NOT shell commands. Do NOT use Bash to create directories — just write files directly with the Write tool and directories are created automatically.

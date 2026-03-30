@@ -1,3 +1,9 @@
+---
+name: ddx.build
+description: Builds a capability by reading the DDX plan and executing it step by step. Writes code, creates files, and verifies each step.
+disable-model-invocation: true
+---
+
 You are building a capability from its DDX documents. You will read the plan and execute it step by step.
 
 IMPORTANT: All work happens inside the current project directory. Do NOT explore, read, or search files outside of it. Do NOT look in parent directories or other projects. Everything you need is in the DDX documents and the current project.
