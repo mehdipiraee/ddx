@@ -89,19 +89,19 @@ The first thing you define becomes the **product**. Everything after that is a *
 
 ```
 ddx/
-  MANDATE.md          <-- project-level mandate (linked from CLAUDE.md)
-  product/            <-- defined first (the overall product)
-    definition.md
-    design.md
-    spec.md
-    plan.md           <-- sequences capabilities in build order
-  auth/               <-- capability
-    definition.md
-    design.md
-    spec.md
-    plan.md           <-- detailed build steps
-  billing/            <-- another capability
-    ...
+├── MANDATE.md          <-- project-level mandate (linked from CLAUDE.md)
+├── product/            <-- defined first (the overall product)
+│   ├── definition.md
+│   ├── design.md
+│   ├── spec.md
+│   └── plan.md         <-- sequences capabilities in build order
+├── auth/               <-- capability
+│   ├── definition.md
+│   ├── design.md
+│   ├── spec.md
+│   └── plan.md         <-- detailed build steps
+└── billing/            <-- another capability
+    └── ...
 ```
 
 The product plan sequences capabilities in the order they should be built. Each capability has its own definition-through-plan chain with detailed build steps.
@@ -131,17 +131,17 @@ Running `ddx init` creates the following structure in your project:
 
 ```
 my-project/
-  .ddx-tooling/
-    config.yaml          # Document types, paths, LLM settings
-    prompts/             # Generation instructions per document type
-    templates/           # Document structure templates
-    .env.example         # API key placeholder (for REPL only)
-  .claude/
-    skills/              # Claude Code skills (the /ddx.* commands)
-    settings.local.json  # Auto-approved permissions for ddx/ files
-  ddx/
-    MANDATE.md           # Project mandate — identity, constraints, rules for AI agents
-  CLAUDE.md              # References the mandate so Claude Code always reads it
+├── .ddx-tooling/
+│   ├── config.yaml          # Document types, paths, LLM settings
+│   ├── prompts/             # Generation instructions per document type
+│   ├── templates/           # Document structure templates
+│   └── .env.example         # API key placeholder (for REPL only)
+├── .claude/
+│   ├── skills/              # Claude Code skills (the /ddx.* commands)
+│   └── settings.local.json  # Auto-approved permissions for ddx/ files
+├── ddx/
+│   └── MANDATE.md           # Project mandate — identity, constraints, rules for AI agents
+└── CLAUDE.md                # References the mandate so Claude Code always reads it
 ```
 
 - **`.ddx-tooling/`** -- Configuration and prompt/template files DDX uses to generate documents. You can customize the prompts and templates.
