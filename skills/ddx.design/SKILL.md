@@ -10,19 +10,28 @@ IMPORTANT: Use file reading/glob tools, NOT shell commands. Do NOT use Bash to c
 
 ## Scope Resolution (do this FIRST)
 
-1. Read `.ddx-tooling/config.yaml` to find the `definition` and `design` entries. Note prompts, templates, and output paths (contain `{scope}`).
+1. Read `.ddx-tooling/config.yaml` to find the `definition` and `design` entries. Note prompts, templates, and output paths (contain `{scope}`). Also note the `mode` field under `design` — it will be `"ascii"` or `"html"`.
 
 2. Check if `ddx/product/definition.md` exists. If it does NOT exist, the user's request IS the product. Set scope to `product`. Do NOT create a capability scope when there is no product yet.
 
 3. If the product exists, determine capability scope:
    - The user may have described what they want. Use that to infer scope.
-   - Glob for `ddx/*/definition.md`. Check which scopes don't have `design.md` yet.
-   - If exactly one scope is missing `design.md`, that is the active scope.
+   - Glob for `ddx/*/definition.md`. Check which scopes don't have a design file yet (check for both `design.md` and `design.html` depending on mode).
+   - If exactly one scope is missing a design file, that is the active scope.
    - If the user's request matches an existing scope (by content), use that scope.
    - If the user's request is something new — this is a new capability. Derive a kebab-case folder name from their description.
    - Only ask the user if it's genuinely ambiguous between multiple scopes.
 
 3. Resolve all paths: replace `{scope}` in output paths.
+
+## Determine Design Mode
+
+Read the `mode` field from the `design` entry in config:
+
+- If `mode` is `"ascii"` (default): use the `prompt`, `template`, and `output` fields.
+- If `mode` is `"html"`: use the `html_prompt`, `html_template`, and `html_output` fields.
+
+This determines which prompt instructions, template structure, and output file path you will use.
 
 ## Ensure Upstream Exists
 
@@ -36,16 +45,28 @@ If it does NOT exist — generate it now:
 
 ## Generate
 
-1. Read the design prompt file.
-2. Read the design template file.
+1. Read the design prompt file (ascii or html, based on mode).
+2. Read the design template file (ascii or html, based on mode).
 3. Read the upstream Definition.
 4. If the output file already exists, read it — you are UPDATING.
-5. Generate the complete design document. Follow the template structure. Fill every section — no placeholders.
+5. Generate the complete design document following the prompt instructions and template structure. Fill every section — no placeholders.
 6. Write the complete document to the resolved output path.
+
+### HTML Mode Notes
+
+When generating in HTML mode:
+- The output is a single `.html` file the user can open in any browser.
+- It loads Tailwind CSS from the local copy at `.ddx-tooling/tailwind.js` (downloaded during `ddx init`). Use `<script src="../.ddx-tooling/tailwind.js"></script>`.
+- Build realistic-looking UI mockups with styled HTML elements (buttons, inputs, cards, navbars, etc.) — not ASCII wireframes.
+- Each screen is wrapped in a device-like frame and includes Visual + Interaction notes below it.
+- All screens are on one scrollable page with a table of contents at the top.
+- Interactive elements should be styled but do NOT need to be functional.
 
 ## Review
 
 Tell the user: "I've written the design to `{output path}`. Please review it — edit anything you'd like to change. When you're done, let me know and I'll read your changes."
+
+For HTML mode, also tell them: "You can open this file directly in your browser to preview the designs."
 
 If the user says they've made changes or want something adjusted:
 1. Re-read the file from disk.

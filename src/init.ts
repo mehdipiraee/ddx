@@ -3,7 +3,9 @@
  */
 
 import * as fs from 'fs';
+import * as https from 'https';
 import * as path from 'path';
+import * as readline from 'readline';
 import * as chalk from 'chalk';
 import { FileManager } from './infra/file-manager';
 
@@ -85,6 +87,28 @@ export class InitCommand {
       this.logStep('Create config.yaml', result === 'skipped' ? 'skip' : 'ok', result);
     } catch (error) {
       this.logStep('Create config.yaml', 'fail', (error as Error).message);
+    }
+
+    // Design mode
+    let designMode: 'ascii' | 'html' = 'ascii';
+    try {
+      designMode = await this.askDesignMode();
+      this.setDesignMode(toolingDir, designMode);
+      this.logStep('Design mode', 'ok', designMode);
+    } catch (error) {
+      this.logStep('Design mode', 'fail', (error as Error).message);
+    }
+
+    // Download Tailwind CSS if HTML mode
+    if (designMode === 'html') {
+      try {
+        await this.downloadTailwind(toolingDir);
+        this.logStep('Download Tailwind CSS', 'ok', '.ddx-tooling/tailwind.js');
+      } catch (error) {
+        designMode = 'ascii';
+        this.setDesignMode(toolingDir, 'ascii');
+        this.logStep('Download Tailwind CSS', 'fail', 'reverting to ASCII mode');
+      }
     }
 
     // Prompts
@@ -382,6 +406,7 @@ export class InitCommand {
     const entriesToAdd = [
       '.ddx-tooling/.env',
       '.ddx-tooling/.state/',
+      '.ddx-tooling/tailwind.js',
     ];
 
     let existingContent = '';
@@ -467,6 +492,79 @@ export class InitCommand {
     this.fileManager.ensureDirectory(path.dirname(settingsPath));
     fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2) + '\n', 'utf8');
     return true;
+  }
+
+  private askDesignMode(): Promise<'ascii' | 'html'> {
+    return new Promise((resolve) => {
+      const rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout,
+      });
+
+      console.log();
+      console.log(dim('  ─────────────────────────────────────────'));
+      console.log();
+      console.log(`  How should ${bold('design documents')} be generated?`);
+      console.log();
+      console.log(`    ${cyan('1)')} ${bold('ASCII')}  — Markdown with ASCII wireframes ${dim('(default)')}`);
+      console.log(`    ${cyan('2)')} ${bold('HTML')}   — Single HTML file with Tailwind CSS designs`);
+      console.log();
+
+      rl.question(`  ${dim('Enter 1 or 2 [1]:')} `, (answer) => {
+        rl.close();
+        console.log();
+        const trimmed = answer.trim();
+        if (trimmed === '2' || trimmed.toLowerCase() === 'html') {
+          resolve('html');
+        } else {
+          resolve('ascii');
+        }
+      });
+    });
+  }
+
+  private downloadTailwind(toolingDir: string): Promise<void> {
+    const targetPath = path.join(toolingDir, 'tailwind.js');
+    const url = 'https://cdn.tailwindcss.com/3.4.17';
+
+    return new Promise((resolve, reject) => {
+      const file = fs.createWriteStream(targetPath);
+      https.get(url, (response) => {
+        // Follow redirects
+        if (response.statusCode === 301 || response.statusCode === 302) {
+          const redirectUrl = response.headers.location;
+          if (!redirectUrl) {
+            reject(new Error('Redirect with no location header'));
+            return;
+          }
+          https.get(redirectUrl, (res2) => {
+            res2.pipe(file);
+            file.on('finish', () => { file.close(); resolve(); });
+          }).on('error', (err) => {
+            fs.unlinkSync(targetPath);
+            reject(err);
+          });
+          return;
+        }
+        response.pipe(file);
+        file.on('finish', () => { file.close(); resolve(); });
+      }).on('error', (err) => {
+        if (fs.existsSync(targetPath)) fs.unlinkSync(targetPath);
+        reject(err);
+      });
+    });
+  }
+
+  private setDesignMode(toolingDir: string, mode: 'ascii' | 'html'): void {
+    const configPath = path.join(toolingDir, 'config.yaml');
+    if (!fs.existsSync(configPath)) return;
+
+    let content = fs.readFileSync(configPath, 'utf8');
+    content = content.replace(
+      /mode:\s*"ascii"\s*#.*$/m,
+      `mode: "${mode}"   # "ascii" or "html"`
+    );
+    fs.writeFileSync(configPath, content, 'utf8');
   }
 
   private isGitignored(entry: string, existingLines: string[]): boolean {
