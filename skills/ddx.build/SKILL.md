@@ -35,6 +35,21 @@ Read these documents for this scope:
 
 Also read `ddx/product/definition.md` and `ddx/product/spec.md` if they exist and scope is not `product`, for product-level context.
 
+### Load Beads Status (if tracking enabled)
+
+After loading documents:
+
+1. Read `.ddx-tooling/config.yaml`. Check if `tracking.provider` is `beads` and `tracking.enabled` is `true`. If not, skip this subsection.
+2. Query all tasks for this scope:
+   `bd list --label ddx:{scope} --json`
+3. Parse the JSON. Each task contains the full step details (Build, Depends on, Verify) in its description. **These task descriptions are the source of truth for what to build** — plan.md is just a status dashboard when Beads is enabled.
+4. Identify completed tasks (closed status) — skip those steps during build.
+5. Query ready tasks:
+   `bd ready --label ddx:{scope} --json`
+   Use this to confirm the next step's dependencies are satisfied and to determine build order.
+
+If any `bd` command fails, fall back to reading plan.md for what information is available. Beads failure never blocks the build.
+
 ### Check if design is needed
 
 Read the definition. Determine if the product has a user interface:
@@ -48,7 +63,10 @@ If any required documents are missing (definition, spec, plan — and design if 
 
 Execute the plan step by step:
 
-1. Read the plan. Identify Step 1.
+1. **Determine step details:**
+   - If Beads tracking is enabled: get step details (Build, Depends on, Verify) from the Beads task descriptions loaded earlier. Use `bd ready --label ddx:{scope} --json` to pick the next unblocked step.
+   - If Beads is NOT enabled: read the plan.md file and identify Step 1.
+
 2. For each step:
    - Tell the user which step you're working on: "Building Step {N}: {step name}"
    - Read the **Build** field to know what to implement.
@@ -56,11 +74,39 @@ Execute the plan step by step:
    - Read the **Verify** field to know what success looks like.
    - Implement the step — write code, create files, install dependencies, whatever the step requires. Use the spec and design documents as your reference for technical decisions and UI details.
    - After implementing, run the verification described in the **Verify** field. If it passes, move to the next step. If it fails, fix the issue before moving on.
-3. After completing each step, update `ddx/{scope}/plan.md` — mark the step as done by adding `[DONE]` to the step heading.
+
+3. After completing each step:
+
+   **If Beads tracking is enabled:**
+   - At step start: `bd update {task-id} --status in_progress`
+   - After verification passes: `bd close {task-id} --reason "Step {N} verified"`
+   - Refresh the plan.md status dashboard: run `bd list --label ddx:{scope} --json`, parse the output, and rewrite `ddx/{scope}/plan.md` as a status table (same format as described in `/ddx.plan`).
+   - If a `bd` command fails, log a warning and continue.
+
+   **If Beads is NOT enabled:**
+   - Update `ddx/{scope}/plan.md` — mark the step as done by adding `[DONE]` to the step heading.
+
 4. Continue to the next step.
 
 ## Completion
 
 When all steps are done:
-- If this is a capability and there are more capabilities in the product plan that are not yet built, tell the user: "The {scope} capability is built. The next capability in the product plan is **{next-capability}**. Want me to run **`/ddx.build`** for it?"
-- If all capabilities are built (or this is a product-level build), tell the user: "All steps in the plan are complete. The {scope} capability is built."
+
+1. If this is a capability (scope is not `product`) and `ddx/product/plan.md` exists:
+
+   **If Beads tracking is enabled:**
+   - Close the parent capability task: `bd list --label ddx:{scope} --json`, find the parent task, `bd close {task-id} --reason "{scope} capability complete"`
+   - Close the product-plan task for this capability:
+     `bd list --label ddx:product-plan --status open --json`
+     Find the task matching this capability name and close it:
+     `bd close {task-id} --reason "{scope} capability complete"`
+   - Refresh both `ddx/{scope}/plan.md` and `ddx/product/plan.md` as status dashboards from Beads (same format as described in `/ddx.plan`).
+
+   **If Beads is NOT enabled:**
+   - Read `ddx/product/plan.md`.
+   - Find this capability's entry and update its **Status** from `in progress` to `complete`.
+   - Write the updated product plan back to disk.
+
+2. If there are more capabilities in the product plan that are not yet built, tell the user: "The {scope} capability is built. The next capability in the product plan is **{next-capability}**. Want me to run **`/ddx.build`** for it?"
+
+3. If all capabilities are built (or this is a product-level build), tell the user: "All steps in the plan are complete. The {scope} capability is built."

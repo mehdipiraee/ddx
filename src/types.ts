@@ -22,10 +22,16 @@ export interface WorkflowConfig {
   state_file: string;
 }
 
+export interface TrackingConfig {
+  provider: 'beads';
+  enabled: boolean;
+}
+
 export interface DDXConfig {
   documents: Record<string, DocumentConfig>;
   llm: LLMConfig;
   workflow: WorkflowConfig;
+  tracking?: TrackingConfig;
 }
 
 export interface WorkflowState {

@@ -49,6 +49,16 @@ export class ConfigLoader {
       throw new Error('Configuration must define workflow settings');
     }
 
+    // Validate tracking if present
+    if (config.tracking) {
+      if (!config.tracking.provider) {
+        throw new Error('Tracking configuration must define a provider');
+      }
+      if (config.tracking.provider !== 'beads') {
+        throw new Error(`Unknown tracking provider: ${config.tracking.provider}. Supported: beads`);
+      }
+    }
+
     // Validate document references
     for (const [docType, docConfig] of Object.entries(config.documents)) {
       // Check upstream references

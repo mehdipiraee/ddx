@@ -6,6 +6,7 @@ import * as fs from 'fs';
 import * as https from 'https';
 import * as path from 'path';
 import * as readline from 'readline';
+import { execSync } from 'child_process';
 import * as chalk from 'chalk';
 import { FileManager } from './infra/file-manager';
 
@@ -111,6 +112,27 @@ export class InitCommand {
       }
     }
 
+    // Beads tracking
+    let beadsEnabled = false;
+    try {
+      const wantsBeads = await this.askBeadsTracking();
+      if (wantsBeads) {
+        beadsEnabled = await this.setupBeads(targetDir);
+        if (beadsEnabled) {
+          this.enableBeadsInConfig(toolingDir);
+          this.installBeadsHook(targetDir);
+          this.addBeadsHookConfig(targetDir);
+          this.logStep('Setup Beads tracking', 'ok', 'enabled');
+        } else {
+          this.logStep('Setup Beads tracking', 'fail', 'installation failed, continuing without tracking');
+        }
+      } else {
+        this.logStep('Beads tracking', 'skip', 'not enabled');
+      }
+    } catch (error) {
+      this.logStep('Beads tracking', 'fail', (error as Error).message);
+    }
+
     // Prompts
     this.copyDirectoryWithFileLogging(
       path.join(this.ddxRootDir, 'prompts'),
@@ -177,7 +199,7 @@ export class InitCommand {
 
     // Claude Code permissions
     try {
-      const result = this.updateClaudePermissions(targetDir);
+      const result = this.updateClaudePermissions(targetDir, beadsEnabled);
       this.logStep('Configure Claude Code permissions', result ? 'ok' : 'skip', result ? undefined : 'already configured');
     } catch (error) {
       this.logStep('Configure Claude Code permissions', 'fail', (error as Error).message);
@@ -470,7 +492,7 @@ export class InitCommand {
     }
   }
 
-  private updateClaudePermissions(targetDir: string): boolean {
+  private updateClaudePermissions(targetDir: string, beadsEnabled: boolean = false): boolean {
     const settingsPath = path.join(targetDir, '.claude', 'settings.local.json');
     const ddxPermissions = [
       'Read(ddx/**)',
@@ -478,6 +500,10 @@ export class InitCommand {
       'Write(ddx/**)',
       'Read(.ddx-tooling/**)',
     ];
+
+    if (beadsEnabled) {
+      ddxPermissions.push('Bash(bd:*)');
+    }
 
     let settings: any = { permissions: { allow: [], deny: [], ask: [] } };
 
@@ -626,6 +652,138 @@ export class InitCommand {
 
     this.fileManager.writeFile(claudeMdPath, newContent);
     return true;
+  }
+
+  private askBeadsTracking(): Promise<boolean> {
+    return new Promise((resolve) => {
+      const rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout,
+      });
+
+      console.log();
+      console.log(dim('  ─────────────────────────────────────────'));
+      console.log();
+      console.log(`  Enable ${bold('task tracking')} with Beads?`);
+      console.log();
+      console.log(`    ${cyan('1)')} ${bold('No')}    — Plan steps in plan.md only ${dim('(default)')}`);
+      console.log(`    ${cyan('2)')} ${bold('Yes')}   — Also track tasks with Beads (bd CLI)`);
+      console.log();
+
+      rl.question(`  ${dim('Enter 1 or 2 [1]:')} `, (answer) => {
+        rl.close();
+        console.log();
+        const trimmed = answer.trim();
+        resolve(trimmed === '2' || trimmed.toLowerCase() === 'yes');
+      });
+    });
+  }
+
+  private async setupBeads(targetDir: string): Promise<boolean> {
+    // Check if bd is already in PATH
+    let bdAvailable = false;
+    try {
+      execSync('which bd', { stdio: 'pipe' });
+      bdAvailable = true;
+      this.logSubStep('Found bd in PATH', 'ok');
+    } catch {
+      // Not in PATH, try to install via Homebrew
+      try {
+        execSync('brew install beads', { stdio: 'pipe' });
+        bdAvailable = true;
+        this.logSubStep('Install Beads via Homebrew', 'ok');
+      } catch {
+        this.logSubStep('Install Beads', 'fail', 'bd not found and brew install failed. Install manually: brew install beads');
+        return false;
+      }
+    }
+
+    try {
+      execSync('bd init --quiet', { cwd: targetDir, stdio: 'pipe' });
+      this.logSubStep('Initialize Beads', 'ok');
+    } catch {
+      this.logSubStep('Initialize Beads', 'fail', 'bd init failed');
+      return false;
+    }
+
+    return true;
+  }
+
+  private enableBeadsInConfig(toolingDir: string): void {
+    const configPath = path.join(toolingDir, 'config.yaml');
+    if (!fs.existsSync(configPath)) return;
+
+    let content = fs.readFileSync(configPath, 'utf8');
+    if (content.includes('tracking:')) return;
+
+    content += '\n# Task Tracking\ntracking:\n  provider: "beads"\n  enabled: true\n';
+    fs.writeFileSync(configPath, content, 'utf8');
+  }
+
+  private installBeadsHook(targetDir: string): void {
+    const sourceHook = path.join(this.ddxRootDir, 'hooks', 'ddx-refresh-plan.sh');
+    const targetHooksDir = path.join(targetDir, '.claude', 'hooks');
+    const targetHook = path.join(targetHooksDir, 'ddx-refresh-plan.sh');
+
+    if (!fs.existsSync(sourceHook)) {
+      this.logSubStep('Copy refresh-plan hook', 'fail', 'hook source not found');
+      return;
+    }
+
+    this.fileManager.ensureDirectory(targetHooksDir);
+    fs.copyFileSync(sourceHook, targetHook);
+    fs.chmodSync(targetHook, 0o755);
+    this.logSubStep('Copy refresh-plan hook', 'ok', '.claude/hooks/ddx-refresh-plan.sh');
+  }
+
+  private addBeadsHookConfig(targetDir: string): void {
+    const settingsPath = path.join(targetDir, '.claude', 'settings.json');
+
+    let settings: any = {};
+    if (fs.existsSync(settingsPath)) {
+      try {
+        settings = JSON.parse(fs.readFileSync(settingsPath, 'utf8'));
+      } catch {
+        settings = {};
+      }
+    }
+
+    if (!settings.hooks) {
+      settings.hooks = {};
+    }
+    if (!Array.isArray(settings.hooks.PostToolUse)) {
+      settings.hooks.PostToolUse = [];
+    }
+
+    // Check if the hook is already configured
+    const alreadyConfigured = settings.hooks.PostToolUse.some((entry: any) =>
+      entry.matcher === 'Bash' &&
+      Array.isArray(entry.hooks) &&
+      entry.hooks.some((h: any) =>
+        typeof h.command === 'string' && h.command.includes('ddx-refresh-plan')
+      )
+    );
+
+    if (alreadyConfigured) {
+      this.logSubStep('Configure refresh-plan hook', 'skip', 'already configured');
+      return;
+    }
+
+    settings.hooks.PostToolUse.push({
+      matcher: 'Bash',
+      hooks: [
+        {
+          type: 'command',
+          if: 'Bash(bd *)',
+          command: '.claude/hooks/ddx-refresh-plan.sh',
+          timeout: 30,
+        },
+      ],
+    });
+
+    this.fileManager.ensureDirectory(path.dirname(settingsPath));
+    fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2) + '\n', 'utf8');
+    this.logSubStep('Configure refresh-plan hook', 'ok', 'PostToolUse hook added');
   }
 
   private isGitignored(entry: string, existingLines: string[]): boolean {
