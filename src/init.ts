@@ -3,12 +3,13 @@
  */
 
 import * as fs from 'fs';
-import * as https from 'https';
 import * as path from 'path';
 import * as readline from 'readline';
 import { execSync } from 'child_process';
 import * as chalk from 'chalk';
 import { FileManager } from './infra/file-manager';
+import { downloadTailwind } from './utils/tailwind';
+import { banner } from './utils/banner';
 
 const c = chalk.default;
 const dim = c.dim;
@@ -17,21 +18,6 @@ const red = c.red;
 const yellow = c.yellow;
 const bold = c.bold;
 const cyan = c.cyan;
-
-const BANNER = `
-${dim('┌─────────────────────────────────────────────┐')}
-${dim('│')}                                             ${dim('│')}
-${dim('│')}    ${bold('██████╗  ██████╗  ██╗  ██╗')}               ${dim('│')}
-${dim('│')}    ${bold('██╔══██╗ ██╔══██╗ ╚██╗██╔╝')}               ${dim('│')}
-${dim('│')}    ${bold('██║  ██║ ██║  ██║  ╚███╔╝')}                ${dim('│')}
-${dim('│')}    ${bold('██║  ██║ ██║  ██║  ██╔██╗')}                ${dim('│')}
-${dim('│')}    ${bold('██████╔╝ ██████╔╝ ██╔╝ ██╗')}               ${dim('│')}
-${dim('│')}    ${bold('╚═════╝  ╚═════╝  ╚═╝  ╚═╝')}               ${dim('│')}
-${dim('│')}                                             ${dim('│')}
-${dim('│')}    ${dim('Document-Driven Development')}              ${dim('│')}
-${dim('│')}                                             ${dim('│')}
-${dim('└─────────────────────────────────────────────┘')}
-`;
 
 interface StepResult {
   label: string;
@@ -50,7 +36,7 @@ export class InitCommand {
   }
 
   async execute(options: { force?: boolean } = {}): Promise<void> {
-    console.log(BANNER);
+    console.log(banner());
 
     if (options.force) {
       console.log(dim('  --force enabled, overwriting existing files\n'));
@@ -566,35 +552,7 @@ export class InitCommand {
   }
 
   private downloadTailwind(toolingDir: string): Promise<void> {
-    const targetPath = path.join(toolingDir, 'tailwind.js');
-    const url = 'https://cdn.tailwindcss.com/3.4.17';
-
-    return new Promise((resolve, reject) => {
-      const file = fs.createWriteStream(targetPath);
-      https.get(url, (response) => {
-        // Follow redirects
-        if (response.statusCode === 301 || response.statusCode === 302) {
-          const redirectUrl = response.headers.location;
-          if (!redirectUrl) {
-            reject(new Error('Redirect with no location header'));
-            return;
-          }
-          https.get(redirectUrl, (res2) => {
-            res2.pipe(file);
-            file.on('finish', () => { file.close(); resolve(); });
-          }).on('error', (err) => {
-            fs.unlinkSync(targetPath);
-            reject(err);
-          });
-          return;
-        }
-        response.pipe(file);
-        file.on('finish', () => { file.close(); resolve(); });
-      }).on('error', (err) => {
-        if (fs.existsSync(targetPath)) fs.unlinkSync(targetPath);
-        reject(err);
-      });
-    });
+    return downloadTailwind(toolingDir);
   }
 
   private setDesignMode(toolingDir: string, mode: 'ascii' | 'html'): void {

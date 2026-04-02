@@ -12,6 +12,7 @@ import * as chalk from 'chalk';
 import { ConfigLoader } from './infra/config';
 import { InitCommand } from './init';
 import { DDXRepl } from './repl';
+import { ConfigRepl } from './config-repl';
 const program = new Command();
 
 program
@@ -55,6 +56,18 @@ program
 
         console.log(`    Output: ${docConfig.output}\n`);
       }
+    } catch (error) {
+      handleError(error);
+    }
+  });
+
+program
+  .command('config')
+  .description('Change DDX settings')
+  .action(async () => {
+    try {
+      const configRepl = new ConfigRepl();
+      await configRepl.start();
     } catch (error) {
       handleError(error);
     }
