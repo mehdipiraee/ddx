@@ -3,7 +3,7 @@
  */
 
 import { SettingHandler } from './types';
-import { downloadTailwind, tailwindExists } from '../utils/tailwind';
+import { downloadTailwind, tailwindExists, removeTailwind } from '../utils/tailwind';
 
 export class DesignModeHandler implements SettingHandler {
   key = 'design-mode';
@@ -28,9 +28,22 @@ export class DesignModeHandler implements SettingHandler {
     );
   }
 
+  sideEffectMessage(value: string, toolingDir: string): string | null {
+    if (value === 'html' && !tailwindExists(toolingDir)) {
+      return 'Downloading Tailwind CSS...';
+    }
+    if (value === 'ascii' && tailwindExists(toolingDir)) {
+      return 'Removing Tailwind CSS...';
+    }
+    return null;
+  }
+
   async sideEffects(value: string, toolingDir: string): Promise<void> {
     if (value === 'html' && !tailwindExists(toolingDir)) {
       await downloadTailwind(toolingDir);
+    }
+    if (value === 'ascii' && tailwindExists(toolingDir)) {
+      removeTailwind(toolingDir);
     }
   }
 }
