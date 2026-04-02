@@ -43,3 +43,8 @@ export function downloadTailwind(toolingDir: string): Promise<void> {
 export function tailwindExists(toolingDir: string): boolean {
   return fs.existsSync(path.join(toolingDir, TAILWIND_FILENAME));
 }
+
+export function removeTailwind(toolingDir: string): void {
+  const targetPath = path.join(toolingDir, TAILWIND_FILENAME);
+  if (fs.existsSync(targetPath)) fs.unlinkSync(targetPath);
+}

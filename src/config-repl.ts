@@ -63,7 +63,7 @@ export class ConfigRepl {
   // Values as they exist on disk
   private saved: Map<string, string> = new Map();
 
-  private statusMessage = '';
+  private statusLines: string[] = [];
   private running = false;
 
   constructor() {
@@ -200,7 +200,7 @@ export class ConfigRepl {
     }
 
     this.pending.set(handler.key, values[next]);
-    this.statusMessage = '';
+    this.statusLines = [];
   }
 
   private async handleEnter(): Promise<void> {
@@ -228,10 +228,11 @@ export class ConfigRepl {
 
   private async save(): Promise<void> {
     if (!this.hasUnsaved) {
-      this.statusMessage = dim('  No changes to save.');
+      this.statusLines = [dim('  No changes to save.')];
       return;
     }
 
+    this.statusLines = [];
     let content = this.writer.readRaw();
 
     for (const handler of this.handlers) {
@@ -242,11 +243,16 @@ export class ConfigRepl {
       content = handler.apply(content, pendingVal);
 
       if (handler.sideEffects) {
+        const progressMsg = handler.sideEffectMessage?.(pendingVal, this.toolingDir);
+        if (progressMsg) {
+          this.statusLines.push(yellow(`  ⏳ ${progressMsg}`));
+          this.render();
+        }
         try {
           await handler.sideEffects(pendingVal, this.toolingDir);
         } catch (err) {
           const msg = err instanceof Error ? err.message : String(err);
-          this.statusMessage = red(`  ✗ ${handler.key}: ${msg}`);
+          this.statusLines.push(red(`  ✗ ${handler.key}: ${msg}`));
           return;
         }
       }
@@ -262,7 +268,7 @@ export class ConfigRepl {
       }
     }
     this.pending.clear();
-    this.statusMessage = green('  ✓ Saved');
+    this.statusLines.push(green('  ✓ Saved'));
   }
 
   // ── Rendering ───────────────────────────────────────────
@@ -306,8 +312,10 @@ export class ConfigRepl {
     }
     lines.push('');
 
-    if (this.statusMessage) {
-      lines.push(this.statusMessage);
+    if (this.statusLines.length > 0) {
+      for (const line of this.statusLines) {
+        lines.push(line);
+      }
       lines.push('');
     }
 

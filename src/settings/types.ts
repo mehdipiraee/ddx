@@ -12,5 +12,6 @@ export interface SettingHandler {
   getCurrentValue(configContent: string): string;
   validate(value: string): string | null; // null = valid, string = error message
   apply(configContent: string, value: string): string; // returns new config content
+  sideEffectMessage?(value: string, toolingDir: string): string | null;
   sideEffects?(value: string, toolingDir: string): Promise<void>;
 }
