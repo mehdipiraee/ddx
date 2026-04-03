@@ -23,7 +23,6 @@ export interface WorkflowConfig {
 }
 
 export interface TrackingConfig {
-  provider: 'beads';
   enabled: boolean;
 }
 

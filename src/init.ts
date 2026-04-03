@@ -25,6 +25,8 @@ interface StepResult {
   detail?: string;
 }
 
+const BEADS_VERSION = '0.63.3';
+
 export class InitCommand {
   private fileManager: FileManager;
   private ddxRootDir: string;
@@ -638,20 +640,51 @@ export class InitCommand {
   }
 
   private async setupBeads(targetDir: string): Promise<boolean> {
-    // Check if bd is already in PATH
-    let bdAvailable = false;
+    // The refresh hook requires jq
     try {
-      execSync('which bd', { stdio: 'pipe' });
-      bdAvailable = true;
-      this.logSubStep('Found bd in PATH', 'ok');
+      execSync('which jq', { stdio: 'pipe' });
+    } catch {
+      this.logSubStep('Check jq dependency', 'fail', 'jq is required for the Beads hook. Install: brew install jq');
+      return false;
+    }
+
+    // Check if bd is already in PATH
+    try {
+      const versionOutput = execSync('bd --version', { stdio: 'pipe' }).toString().trim();
+      const versionMatch = versionOutput.match(/(\d+\.\d+\.\d+)/);
+      const installedVersion = versionMatch ? versionMatch[1] : null;
+
+      if (installedVersion !== BEADS_VERSION) {
+        this.logSubStep('Check bd version', 'fail', `found v${installedVersion || 'unknown'}, requires v${BEADS_VERSION}. Run: brew upgrade beads`);
+        return false;
+      }
+
+      this.logSubStep(`Found bd v${BEADS_VERSION} in PATH`, 'ok');
     } catch {
       // Not in PATH, try to install via Homebrew
       try {
-        execSync('brew install beads', { stdio: 'pipe' });
-        bdAvailable = true;
-        this.logSubStep('Install Beads via Homebrew', 'ok');
+        execSync('which brew', { stdio: 'pipe' });
       } catch {
-        this.logSubStep('Install Beads', 'fail', 'bd not found and brew install failed. Install manually: brew install beads');
+        this.logSubStep('Install Beads', 'fail', `bd not found and Homebrew not available. Install manually: brew install beads@${BEADS_VERSION}`);
+        return false;
+      }
+
+      console.log(`  ${dim('Installing Beads v' + BEADS_VERSION + ' via Homebrew...')}`);
+      try {
+        execSync('brew install beads', { stdio: 'pipe' });
+        // Verify installed version
+        const versionOutput = execSync('bd --version', { stdio: 'pipe' }).toString().trim();
+        const versionMatch = versionOutput.match(/(\d+\.\d+\.\d+)/);
+        const installedVersion = versionMatch ? versionMatch[1] : null;
+
+        if (installedVersion !== BEADS_VERSION) {
+          this.logSubStep('Install Beads', 'fail', `installed v${installedVersion || 'unknown'} but requires v${BEADS_VERSION}`);
+          return false;
+        }
+
+        this.logSubStep(`Install Beads v${BEADS_VERSION} via Homebrew`, 'ok');
+      } catch {
+        this.logSubStep('Install Beads', 'fail', `brew install failed. Install manually: brew install beads`);
         return false;
       }
     }
@@ -674,7 +707,7 @@ export class InitCommand {
     let content = fs.readFileSync(configPath, 'utf8');
     if (content.includes('tracking:')) return;
 
-    content += '\n# Task Tracking\ntracking:\n  provider: "beads"\n  enabled: true\n';
+    content += '\n# Task Tracking (Beads)\ntracking:\n  enabled: true\n';
     fs.writeFileSync(configPath, content, 'utf8');
   }
 

@@ -56,7 +56,7 @@ Read `ddx/{scope}/definition.md`. Determine if the product has a user interface:
 
 ### Apply the cascade
 
-First, check if Beads tracking is enabled: read `.ddx-tooling/config.yaml` and check if `tracking.provider` is `beads` and `tracking.enabled` is `true`.
+First, check if Beads tracking is enabled: check the config already loaded in "Load Everything" for `tracking.enabled` being `true`.
 
 For each downstream document in the chain that exists:
 

@@ -11,7 +11,7 @@ import * as readline from 'readline';
 import * as path from 'path';
 import * as chalk from 'chalk';
 import { ConfigWriter } from './infra/config-writer';
-import { SettingHandler, DesignModeHandler } from './settings';
+import { SettingHandler, DesignModeHandler, TrackingHandler } from './settings';
 import { banner } from './utils/banner';
 
 const c = chalk.default;
@@ -74,7 +74,7 @@ export class ConfigRepl {
       throw new Error('DDX not initialized. Run \'ddx init\' first.');
     }
 
-    this.handlers = [new DesignModeHandler()];
+    this.handlers = [new DesignModeHandler(), new TrackingHandler()];
     this.rows = this.buildRows();
     this.loadSavedValues();
 

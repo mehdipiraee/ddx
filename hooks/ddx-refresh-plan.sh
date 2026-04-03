@@ -9,16 +9,15 @@ set -euo pipefail
 
 INPUT=$(cat)
 COMMAND=$(echo "$INPUT" | jq -r '.tool_input.command // empty' 2>/dev/null) || exit 0
-EXIT_CODE=$(echo "$INPUT" | jq -r '.tool_response.stdout // "" | if test("exit code") then "1" else "0" end' 2>/dev/null)
 
-# Also check for explicit exit_code field
+# Skip if the command failed
 ACTUAL_EXIT=$(echo "$INPUT" | jq -r '.tool_response.exit_code // 0' 2>/dev/null)
 if [ "$ACTUAL_EXIT" != "0" ] && [ "$ACTUAL_EXIT" != "null" ]; then
   exit 0
 fi
 
 # Only act on state-changing bd commands
-STATE_CHANGING="^bd\s+(close|update|create|reopen|delete|set-state|priority|assign|dep|link|tag|label)"
+STATE_CHANGING="^bd[[:space:]]+(close|update|create|reopen|delete|set-state|priority|assign|dep|link|tag|label)"
 if ! echo "$COMMAND" | grep -qE "$STATE_CHANGING"; then
   exit 0
 fi
@@ -37,11 +36,14 @@ if [ ! -f "$CONFIG" ]; then
   exit 0
 fi
 
-# Simple YAML check for tracking enabled (avoid pulling in a YAML parser)
-if ! grep -q 'provider:.*beads' "$CONFIG" 2>/dev/null; then
-  exit 0
-fi
-if ! grep -q 'enabled:.*true' "$CONFIG" 2>/dev/null; then
+# Parse tracking.enabled from the YAML config using awk.
+TRACKING_ENABLED=$(awk '
+  /^tracking:/ { in_tracking=1; next }
+  in_tracking && /^[^ ]/ { exit }
+  in_tracking && /enabled:/ { gsub(/.*enabled:[[:space:]]*/, ""); print; exit }
+' "$CONFIG" 2>/dev/null)
+
+if [ "$TRACKING_ENABLED" != "true" ]; then
   exit 0
 fi
 
@@ -73,10 +75,7 @@ refresh_scope() {
   if [ "$scope" = "product" ]; then
     header="# Product Plan — Status"
   else
-    # Capitalize scope for display
-    local display_scope
-    display_scope=$(echo "$scope" | sed 's/-/ /g; s/\b\(.\)/\u\1/g')
-    header="# $display_scope — Build Plan Status"
+    header="# $scope — Build Plan Status"
   fi
 
   # Generate table rows from JSON
@@ -90,26 +89,34 @@ refresh_scope() {
     ] | .[]
   ' 2>/dev/null) || return 0
 
-  cat > "$plan_path" << EOF
-$header
+  local refreshed
+  refreshed=$(date -u '+%Y-%m-%d %H:%M UTC')
 
-> Auto-generated from Beads. Source of truth: \`bd list --label $label\`
-> Last refreshed: $(date -u '+%Y-%m-%d %H:%M UTC')
-
-$table
-
-## Details
-
-For full step details: \`bd show {task-id}\`
-For live status: \`bd list --label $label\`
-EOF
+  printf '%s\n\n> Auto-generated from Beads. Source of truth: `bd list --label %s`\n> Last refreshed: %s\n\n%s\n\n## Details\n\nFor full step details: `bd show {task-id}`\nFor live status: `bd list --label %s`\n' \
+    "$header" "$label" "$refreshed" "$table" "$label" > "$plan_path"
 }
 
-# Iterate over all scopes
-for scope_dir in "$DDX_DIR"/*/; do
-  [ -d "$scope_dir" ] || continue
-  scope=$(basename "$scope_dir")
-  refresh_scope "$scope"
-done
+# Extract affected scope(s) from --label ddx:{scope} in the command
+SCOPES=$(echo "$COMMAND" | grep -oE 'ddx:[a-zA-Z0-9_-]+' | sed 's/^ddx://' | sort -u) || true
+
+if [ -n "$SCOPES" ]; then
+  # Refresh only the scope(s) mentioned in the command
+  for scope in $SCOPES; do
+    # Map product-plan label back to product scope
+    if [ "$scope" = "product-plan" ]; then
+      scope="product"
+    fi
+    if [ -d "$DDX_DIR/$scope" ]; then
+      refresh_scope "$scope"
+    fi
+  done
+else
+  # No label found — fall back to refreshing all scopes
+  for scope_dir in "$DDX_DIR"/*/; do
+    [ -d "$scope_dir" ] || continue
+    scope=$(basename "$scope_dir")
+    refresh_scope "$scope"
+  done
+fi
 
 exit 0

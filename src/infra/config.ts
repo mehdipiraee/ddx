@@ -50,13 +50,8 @@ export class ConfigLoader {
     }
 
     // Validate tracking if present
-    if (config.tracking) {
-      if (!config.tracking.provider) {
-        throw new Error('Tracking configuration must define a provider');
-      }
-      if (config.tracking.provider !== 'beads') {
-        throw new Error(`Unknown tracking provider: ${config.tracking.provider}. Supported: beads`);
-      }
+    if (config.tracking && typeof config.tracking.enabled !== 'boolean') {
+      throw new Error('Tracking configuration must define enabled as a boolean');
     }
 
     // Validate document references

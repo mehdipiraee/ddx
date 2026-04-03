@@ -39,13 +39,13 @@ Also read `ddx/product/definition.md` and `ddx/product/spec.md` if they exist an
 
 After loading documents:
 
-1. Read `.ddx-tooling/config.yaml`. Check if `tracking.provider` is `beads` and `tracking.enabled` is `true`. If not, skip this subsection.
+1. Check the config already loaded in Scope Resolution. If `tracking.enabled` is `true`, continue. Otherwise skip this subsection.
 2. Query all tasks for this scope:
-   `bd list --label ddx:{scope} --json`
+   `bd list --label ddx:{scope} --all --limit 0 --flat --json`
 3. Parse the JSON. Each task contains the full step details (Build, Depends on, Verify) in its description. **These task descriptions are the source of truth for what to build** — plan.md is just a status dashboard when Beads is enabled.
 4. Identify completed tasks (closed status) — skip those steps during build.
 5. Query ready tasks:
-   `bd ready --label ddx:{scope} --json`
+   `bd ready --label ddx:{scope} --all --limit 0 --flat --json`
    Use this to confirm the next step's dependencies are satisfied and to determine build order.
 
 If any `bd` command fails, fall back to reading plan.md for what information is available. Beads failure never blocks the build.
@@ -64,7 +64,7 @@ If any required documents are missing (definition, spec, plan — and design if 
 Execute the plan step by step:
 
 1. **Determine step details:**
-   - If Beads tracking is enabled: get step details (Build, Depends on, Verify) from the Beads task descriptions loaded earlier. Use `bd ready --label ddx:{scope} --json` to pick the next unblocked step.
+   - If Beads tracking is enabled: get step details (Build, Depends on, Verify) from the Beads task descriptions loaded earlier. Use `bd ready --label ddx:{scope} --all --limit 0 --flat --json` to pick the next unblocked step.
    - If Beads is NOT enabled: read the plan.md file and identify Step 1.
 
 2. For each step:
@@ -80,7 +80,7 @@ Execute the plan step by step:
    **If Beads tracking is enabled:**
    - At step start: `bd update {task-id} --status in_progress`
    - After verification passes: `bd close {task-id} --reason "Step {N} verified"`
-   - Refresh the plan.md status dashboard: run `bd list --label ddx:{scope} --json`, parse the output, and rewrite `ddx/{scope}/plan.md` as a status table (same format as described in `/ddx.plan`).
+   - The Claude Code PostToolUse hook automatically refreshes `plan.md` after each `bd` command. Do NOT manually regenerate it.
    - If a `bd` command fails, log a warning and continue.
 
    **If Beads is NOT enabled:**
@@ -95,12 +95,12 @@ When all steps are done:
 1. If this is a capability (scope is not `product`) and `ddx/product/plan.md` exists:
 
    **If Beads tracking is enabled:**
-   - Close the parent capability task: `bd list --label ddx:{scope} --json`, find the parent task, `bd close {task-id} --reason "{scope} capability complete"`
+   - Close the parent capability task: `bd list --label ddx:{scope} --all --limit 0 --flat --json`, find the parent task, `bd close {task-id} --reason "{scope} capability complete"`
    - Close the product-plan task for this capability:
-     `bd list --label ddx:product-plan --status open --json`
+     `bd list --label ddx:product-plan --status open --all --limit 0 --flat --json`
      Find the task matching this capability name and close it:
      `bd close {task-id} --reason "{scope} capability complete"`
-   - Refresh both `ddx/{scope}/plan.md` and `ddx/product/plan.md` as status dashboards from Beads (same format as described in `/ddx.plan`).
+   - The hook automatically refreshes both `ddx/{scope}/plan.md` and `ddx/product/plan.md` after the `bd close` commands.
 
    **If Beads is NOT enabled:**
    - Read `ddx/product/plan.md`.
