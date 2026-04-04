@@ -14,4 +14,5 @@ export interface SettingHandler {
   apply(configContent: string, value: string): string; // returns new config content
   sideEffectMessage?(value: string, toolingDir: string): string | null;
   sideEffects?(value: string, toolingDir: string): Promise<void>;
+  sideEffectWarnings?(value: string, toolingDir: string): string[] | null;
 }

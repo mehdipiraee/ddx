@@ -256,6 +256,15 @@ export class ConfigRepl {
           return;
         }
       }
+
+      if (handler.sideEffectWarnings) {
+        const warnings = handler.sideEffectWarnings(pendingVal, this.toolingDir);
+        if (warnings) {
+          for (const w of warnings) {
+            this.statusLines.push(yellow(`  ⚠ ${w}`));
+          }
+        }
+      }
     }
 
     this.writer.writeRaw(content);
