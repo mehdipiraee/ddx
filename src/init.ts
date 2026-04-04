@@ -46,6 +46,9 @@ export class InitCommand {
     const toolingDir = path.join(targetDir, '.ddx-tooling');
     const ddxDir = path.join(targetDir, 'ddx');
 
+    // Scan for existing files BEFORE installing anything
+    const hasCode = this.hasExistingFiles(targetDir);
+
     // Pre-flight check
     if (!options.force) {
       try {
@@ -189,8 +192,7 @@ export class InitCommand {
       this.logStep('Configure Claude Code permissions', 'fail', (error as Error).message);
     }
 
-    // Scan for existing files
-    const hasCode = this.hasExistingFiles(targetDir);
+    // Report pre-scan result
     this.logStep('Scan for existing files', 'ok', hasCode ? 'files detected' : 'empty project');
 
     // Summary
@@ -465,7 +467,7 @@ export class InitCommand {
   private hasExistingFiles(targetDir: string): boolean {
     const ignore = new Set([
       '.git', '.gitignore', '.ddx-tooling', '.claude',
-      'ddx', 'node_modules', '.DS_Store',
+      'ddx', 'node_modules', '.DS_Store', 'CLAUDE.md',
     ]);
 
     try {
