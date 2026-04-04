@@ -85,14 +85,15 @@ Detailed build steps for a single capability.
 
 ## Review
 
+**STOP HERE. Do NOT continue to Beads Task Sync until the user explicitly confirms they are happy with the plan.**
+
 Tell the user: "I've written the plan to `{output path}`. Please review it — reorder, split, or merge steps as needed. When you're done, let me know and I'll read your changes."
 
-If the user says they've made changes or want something adjusted:
-1. Re-read the file from disk.
-2. Make the requested changes.
-3. Write the updated file.
+Then WAIT for the user's response. Do not proceed further in this skill. Do not create beads tasks. Do not suggest next steps beyond reviewing the plan. Your turn ends here.
 
-When the user is satisfied, proceed to Beads Task Sync (if applicable), then tell them: "The plan is finalized. The next step is **`/ddx.build`** to start building. Want me to run it?"
+When the user responds:
+- If they request changes: re-read the file from disk, make the requested changes, write the updated file, and STOP again to wait for further feedback.
+- If they explicitly confirm the plan is good (e.g., "looks good", "approved", "let's go", "happy with it"): ONLY THEN proceed to Beads Task Sync (if applicable), then tell them: "The plan is finalized. The next step is **`/ddx.build`** to start building. Want me to run it?"
 
 ## Beads Task Sync (if tracking enabled)
 

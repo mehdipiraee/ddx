@@ -42,13 +42,19 @@ After loading documents:
 1. Check the config already loaded in Scope Resolution. If `tracking.enabled` is `true`, continue. Otherwise skip this subsection.
 2. Query all tasks for this scope:
    `bd list --label ddx:{scope} --all --limit 0 --flat --json`
-3. Parse the JSON. Each task contains the full step details (Build, Depends on, Verify) in its description. **These task descriptions are the source of truth for what to build** — plan.md is just a status dashboard when Beads is enabled.
-4. Identify completed tasks (closed status) — skip those steps during build.
-5. Query ready tasks:
+3. **If the query returns zero tasks** (empty list, not a command failure): Beads tasks were never created for this scope. This means `/ddx.plan` wrote plan.md but the user moved on before Beads sync happened. **Create the tasks now** by running the Beads Task Sync procedure from the `/ddx.plan` skill:
+   - Re-read `ddx/{scope}/plan.md` and parse all steps.
+   - **For a Capability Plan:** Create a parent task, then child tasks for each step with full details (Build, Depends on, Verify) as the description, set up sequential dependencies, and label all with `ddx:{scope}`.
+   - **For a Product Plan:** Create tasks for each capability in the sequence with descriptions, set up dependency chains, and label with `ddx:product-plan`.
+   - After creating tasks, re-query: `bd list --label ddx:{scope} --all --limit 0 --flat --json`
+   - Tell the user: "Beads tasks didn't exist yet — I've created them from plan.md."
+4. Parse the JSON. Each task contains the full step details (Build, Depends on, Verify) in its description. **These task descriptions are the source of truth for what to build** — plan.md is just a status dashboard when Beads is enabled.
+5. Identify completed tasks (closed status) — skip those steps during build.
+6. Query ready tasks:
    `bd ready --label ddx:{scope} --all --limit 0 --flat --json`
    Use this to confirm the next step's dependencies are satisfied and to determine build order.
 
-If any `bd` command fails, fall back to reading plan.md for what information is available. Beads failure never blocks the build.
+If a `bd` command fails during task creation, retry once. If it fails again, stop and tell the user to check their Beads installation.
 
 ### Check if design is needed
 
