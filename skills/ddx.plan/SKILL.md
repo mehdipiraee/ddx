@@ -57,7 +57,8 @@ The product plan sequences which capabilities to build and in what order. It doe
    - A one-line description
    - Dependencies on other capabilities
 4. Order from foundational (no dependencies) to complex (depends on earlier ones).
-5. Write the plan using this structure:
+5. **If Beads tracking is enabled** (`tracking.enabled: true` in config): Present the plan **inline in the conversation** as formatted markdown. Do NOT write it to `plan.md`. The plan content stays in conversation context for the Review and Beads Task Sync phases.
+6. **If Beads tracking is NOT enabled**: Write the plan to the resolved output path using this structure:
 
 ```
 # Product Plan
@@ -80,20 +81,29 @@ Detailed build steps for a single capability.
 1. Read the capability's definition and spec (and design, if it exists).
 2. Also read `ddx/product/plan.md` to understand where this capability fits and what it depends on. If dependency capabilities have specs, skim them for interfaces this capability integrates with.
 3. Decompose into ordered steps from low to high complexity. Each step builds on the previous.
-4. Write the plan to the resolved output path using the template structure.
-5. After writing, if `ddx/product/plan.md` exists, update this capability's status to `in progress` in the product plan.
+4. **If Beads tracking is enabled** (`tracking.enabled: true` in config): Present the plan **inline in the conversation** as formatted markdown. Do NOT write it to `plan.md`. The plan content stays in conversation context for the Review and Beads Task Sync phases.
+5. **If Beads tracking is NOT enabled**: Write the plan to the resolved output path using the template structure.
+6. After writing (or presenting inline), if `ddx/product/plan.md` exists, update this capability's status to `in progress` in the product plan.
 
 ## Review
 
 **STOP HERE. Do NOT continue to Beads Task Sync until the user explicitly confirms they are happy with the plan.**
 
-Tell the user: "I've written the plan to `{output path}`. Please review it — reorder, split, or merge steps as needed. When you're done, let me know and I'll read your changes."
+**If Beads tracking is enabled:**
+Tell the user: "Here's the plan above. Please review it — reorder, split, or merge steps as needed. When you're happy, let me know and I'll create the Beads tasks."
 
-Then WAIT for the user's response. Do not proceed further in this skill. Do not create beads tasks. Do not suggest next steps beyond reviewing the plan. Your turn ends here.
+When the user responds:
+- If they request changes: revise the plan and re-present it inline in the conversation. STOP again to wait for further feedback.
+- If they explicitly confirm (e.g., "looks good", "approved", "let's go"): ONLY THEN proceed to Beads Task Sync, then tell them: "The plan is finalized. The next step is **`/ddx.build`** to start building. Want me to run it?"
+
+**If Beads tracking is NOT enabled:**
+Tell the user: "I've written the plan to `{output path}`. Please review it — reorder, split, or merge steps as needed. When you're done, let me know and I'll read your changes."
 
 When the user responds:
 - If they request changes: re-read the file from disk, make the requested changes, write the updated file, and STOP again to wait for further feedback.
-- If they explicitly confirm the plan is good (e.g., "looks good", "approved", "let's go", "happy with it"): ONLY THEN proceed to Beads Task Sync (if applicable), then tell them: "The plan is finalized. The next step is **`/ddx.build`** to start building. Want me to run it?"
+- If they explicitly confirm (e.g., "looks good", "approved", "let's go"): ONLY THEN tell them: "The plan is finalized. The next step is **`/ddx.build`** to start building. Want me to run it?"
+
+Then WAIT for the user's response. Do not proceed further in this skill. Do not create beads tasks. Do not suggest next steps beyond reviewing the plan. Your turn ends here.
 
 ## Beads Task Sync (if tracking enabled)
 
@@ -101,7 +111,7 @@ After the plan is finalized:
 
 1. Check the config already loaded in Scope Resolution. If `tracking.enabled` is `true`, continue. Otherwise skip this section entirely.
 
-2. Re-read the plan file from disk. Parse all steps.
+2. Parse all steps from the plan generated above (already in conversation context). Do NOT read from `plan.md` — the plan content was presented inline and may have been revised during the Review phase.
 
 3. **For a Capability Plan:**
    - Create a parent task:

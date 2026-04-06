@@ -42,12 +42,13 @@ After loading documents:
 1. Check the config already loaded in Scope Resolution. If `tracking.enabled` is `true`, continue. Otherwise skip this subsection.
 2. Query all tasks for this scope:
    `bd list --label ddx:{scope} --all --limit 0 --flat --json`
-3. **If the query returns zero tasks** (empty list, not a command failure): Beads tasks were never created for this scope. This means `/ddx.plan` wrote plan.md but the user moved on before Beads sync happened. **Create the tasks now** by running the Beads Task Sync procedure from the `/ddx.plan` skill:
-   - Re-read `ddx/{scope}/plan.md` and parse all steps.
+3. **If the query returns zero tasks** (empty list, not a command failure): Beads tasks were never created for this scope. **Generate the plan from upstream docs and create tasks now:**
+   - Read the upstream documents for this scope: `ddx/{scope}/definition.md`, `ddx/{scope}/spec.md`, and `ddx/{scope}/design.md` (only if the product has a UI). Also read `ddx/product/plan.md` if this is a capability scope.
+   - Generate the plan steps using the same logic as `/ddx.plan` (decompose into ordered steps from low to high complexity, each with Build, Depends on, and Verify fields). Do NOT rely on `plan.md` for content — when beads is enabled, `plan.md` is a dashboard only.
    - **For a Capability Plan:** Create a parent task, then child tasks for each step with full details (Build, Depends on, Verify) as the description, set up sequential dependencies, and label all with `ddx:{scope}`.
    - **For a Product Plan:** Create tasks for each capability in the sequence with descriptions, set up dependency chains, and label with `ddx:product-plan`.
    - After creating tasks, re-query: `bd list --label ddx:{scope} --all --limit 0 --flat --json`
-   - Tell the user: "Beads tasks didn't exist yet — I've created them from plan.md."
+   - Tell the user: "Beads tasks didn't exist yet — I've generated the plan from upstream docs and created them."
 4. Parse the JSON. Each task contains the full step details (Build, Depends on, Verify) in its description. **These task descriptions are the source of truth for what to build** — plan.md is just a status dashboard when Beads is enabled.
 5. Identify completed tasks (closed status) — skip those steps during build.
 6. Query ready tasks:

@@ -92,7 +92,7 @@ refresh_scope() {
   local refreshed
   refreshed=$(date -u '+%Y-%m-%d %H:%M UTC')
 
-  printf '%s\n\n> Auto-generated from Beads. Source of truth: `bd list --label %s`\n> Last refreshed: %s\n\n%s\n\n## Details\n\nFor full step details: `bd show {task-id}`\nFor live status: `bd list --label %s`\n' \
+  printf '%s\n\n> Auto-generated from Beads. If you edit this file, it will get out of sync with Beads.\n> Source of truth: `bd list --label %s`\n> Last refreshed: %s\n\n%s\n\n## Details\n\nFor full step details: `bd show {task-id}`\nFor live status: `bd list --label %s`\n' \
     "$header" "$label" "$refreshed" "$table" "$label" > "$plan_path"
 }
 
